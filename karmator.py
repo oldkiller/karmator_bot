@@ -2,9 +2,9 @@ from flask import Flask, request
 import psycopg2 as pg
 import hashlib
 import telebot
-# import os
+import os
 
-# tele_api=os.environ["telegram_token"]
+tele_api=os.environ["telegram_token"]
 db_address=os.environ["DATABASE_URL"]
 bot = telebot.TeleBot("497913397:AAF1PnbwocP97InvSKLzsyvi0QLA7brW1-c")
 data = pg.connect(db_address)
