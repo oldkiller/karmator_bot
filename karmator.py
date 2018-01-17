@@ -73,4 +73,5 @@ def webhook_del(password):
 	else:
 		return "Invalid password", 200
 
+print(os.environ.get('PORT', 5000), type(os.environ.get('PORT', 5000)))
 server.run(host="0.0.0.0", port=os.environ.get('PORT', 5000))
