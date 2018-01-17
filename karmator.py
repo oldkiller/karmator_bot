@@ -13,12 +13,16 @@ curs=data.cursor()
 
 @bot.message_handler(commands=["start"])
 def start(message):
-	bot.send_message(message.chat.id, "Дратути")
+	bot.send_message(message.chat.id, "Здравствуйте, я бот,\
+	 который отвечает за подсчет кармы в групповых чатах.")
 
 @bot.message_handler(commands=["help"])
 def helps(message):
-	help_mess="Все ключи начинаются с минуса (-)\n"\
-	"Ключи для рассписания: {d - day, t - tomorrow, w - week, f - full}"
+	help_mess="Текс, бот пока в альфе. Так что:\n\
+	1. Бот реагирует только на 'спс', и только если 'спс' стоит само\
+	 по себе, или отгорожено от остального текста пробелами\n\
+	2. Карма общая для всех чатов\n\
+	3. Ограничений на выдачу кармы нет."
 	bot.send_message(message.chat.id, help_mess)
 
 def parse_message(text):
@@ -33,18 +37,29 @@ def parse_message(text):
 			res["word"].append(i)
 	return res
 
+def add_karma(user):
+	curs.execute("select * from karma_user where ids=%s",(user.id,))
+	news=curs.fetchall()
+	if news:
+		curs.execute("update karma_user set karma=karma+1 where ids=%s",(user.id,))
+	else:
+		curs.execute("insert into karma_user values(%s,%s,%s,%s)", (user.id,1,user.first_name+" "+user.last_name,user.username))
+	data.commit()
+
+@bot.message_handler(commands=["mykarm"])
+def mykarm(message):
+	curs.execute("select * from karma_user where ids=%s", (message.from_user.id,))
+	user=curs.fetchall()
+	if user:
+		bot.send_message(message.chat.id, )
+
 @bot.message_handler(func=lambda message: True if message.reply_to_message else False)
 def reputation(message):
-	print("im reputation")
 	print(message)
 	text=parse_message(message.text)
 	if "спс" in text["word"]:
-		curs.execute("update karma_user set karma=karma+1 where ids=%s",(212668916,))
-		bot.send_message(message.chat.id, "Карма принята")
-		data.commit()
-	# print(message.reply_to_message.from_user.username)
-	# print(message.reply_to_message.from_user)
-	bot.send_message(message.chat.id, "++")
+		add_karma(message.reply_to_message.from_user)
+		bot.send_message(message.chat.id, "Карма повышена")
 
 # @bot.message_handler(content_types=['text'])
 # def another_text(message):
