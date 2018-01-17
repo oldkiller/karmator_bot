@@ -5,7 +5,7 @@ import telebot
 # import os
 
 # tele_api=os.environ["telegram_token"]
-# db_address=os.environ["DATABASE_URL"]
+db_address=os.environ["DATABASE_URL"]
 bot = telebot.TeleBot("497913397:AAF1PnbwocP97InvSKLzsyvi0QLA7brW1-c")
 data = pg.connect(db_address)
 db.set_isolation_level(pg.extensions.ISOLATION_LEVEL_AUTOCOMMIT)
