@@ -43,7 +43,10 @@ def add_karma(user):
 	if news:
 		curs.execute("update karma_user set karma=karma+1 where ids=%s",(user.id,))
 	else:
-		curs.execute("insert into karma_user values(%s,%s,%s,%s)", (user.id,1,user.first_name+" "+user.last_name,user.username))
+		try:
+			curs.execute("insert into karma_user values(%s,%s,%s,%s)", (user.id,1,user.first_name+" "+user.last_name,user.username))
+		except Exception as e:
+			bot.send_message(message.chat.id, str(e))
 	data.commit()
 
 @bot.message_handler(commands=["mykarm"])
@@ -52,7 +55,14 @@ def mykarm(message):
 	user=curs.fetchall()
 	if user:
 		name=user[0][2].strip() if user[0][2].strip() else user[0][3].strip()
-		bot.send_message(message.chat.id, f"Текущая карма для {name}: {user[0][1]}")
+		bot.send_message(message.chat.id, f"Текущая карма для {name}: {user[0][1]}.")
+	else:
+		if message.from_user.first_name:
+			name=message.from_user.first_name + message.from_user.last_name 
+		else:
+			name=message.from_user.username
+		bot.send_message(message.chat.id, "Вас еще не благодарили.")
+
 
 @bot.message_handler(func=lambda message: True if message.reply_to_message else False)
 def reputation(message):
