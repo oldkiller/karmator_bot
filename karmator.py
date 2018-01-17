@@ -51,7 +51,8 @@ def mykarm(message):
 	curs.execute("select * from karma_user where ids=%s", (message.from_user.id,))
 	user=curs.fetchall()
 	if user:
-		bot.send_message(message.chat.id, f"Текущая карма: {user[1]}")
+		name=user[0][2].strip() if user[0][2].strip() else user[0][3].strip()
+		bot.send_message(message.chat.id, f"Текущая карма для {name}: {user[0][1]}")
 
 @bot.message_handler(func=lambda message: True if message.reply_to_message else False)
 def reputation(message):
