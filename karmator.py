@@ -9,6 +9,7 @@ db_address=os.environ["DATABASE_URL"]
 bot = telebot.TeleBot("497913397:AAF1PnbwocP97InvSKLzsyvi0QLA7brW1-c")
 data = pg.connect(db_address)
 data.set_isolation_level(pg.extensions.ISOLATION_LEVEL_AUTOCOMMIT)
+curs=data.cursor()
 
 @bot.message_handler(commands=["start"])
 def start(message):
@@ -38,8 +39,9 @@ def reputation(message):
 	print(message)
 	text=parse_message(message.text)
 	if "спс" in text["word"]:
+		curs.execute("update karma_user set karma=karma+1 where ids=%s",(212668916,))
 		bot.send_message(message.chat.id, "Карма принята")
-		data.execute("update karma_user set karma=karma+1 where ids=%s",(212668916,))
+		data.commit()
 	# print(message.reply_to_message.from_user.username)
 	# print(message.reply_to_message.from_user)
 	bot.send_message(message.chat.id, "++")
