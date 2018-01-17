@@ -71,6 +71,6 @@ def webhook_del(password):
 		bot.remove_webhook()
 		return "Webhook removed", 200
 	else:
-		return "Invalid password"
+		return "Invalid password", 200
 
 server.run(host="0.0.0.0", port=os.environ.get('PORT', 5000))
