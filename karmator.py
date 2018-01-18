@@ -11,8 +11,9 @@ data = pg.connect(db_address)
 data.set_isolation_level(pg.extensions.ISOLATION_LEVEL_AUTOCOMMIT)
 curs=data.cursor()
 
-replylist=['спс', 'спасибо', 'сяп', 'благодарю','благодарность', 'помог','sps','spasibo',"дякую", 
+good_action=["спс", "спасибо", "сяп", "благодарю","благодарность", "помог","sps","spasibo","дякую", 
 			"бережи тебе боже"]
+bad_action=["говно", "пидор", "добровская"]
 
 @bot.message_handler(commands=["start"])
 def start(message):
@@ -58,6 +59,22 @@ def add_karma(user):
 			bot.send_message(message.chat.id, str(e))
 	data.commit()
 
+def diff_karma(user):
+	curs.execute("select * from karma_user where ids=%s",(user.id,))
+	news=curs.fetchall()
+	if news:
+		curs.execute("update karma_user set karma=karma-1 where ids=%s",(user.id,))
+	else:
+		try:
+			first_name=user.first_name if user.first_name else ""
+			last_name=user.last_name if user.last_name else ""
+			username=user.username if user.username else ""
+			curs.execute("insert into karma_user values(%s,%s,%s,%s)", 
+				(user.id,-1,first_name+" "+last_name,username))
+		except Exception as e:
+			bot.send_message(message.chat.id, str(e))
+	data.commit()	
+
 @bot.message_handler(commands=["mykarm"])
 def mykarm(message):
 	curs.execute("select * from karma_user where ids=%s", (message.from_user.id,))
@@ -92,17 +109,23 @@ def reputation(message):
 		bot.send_message(message.chat.id, "Нельзя добавлять карму самому себе.")
 		return
 	text=message.text.lower()
-	for rep in replylist:
+	for rep in good_action:
 		if rep in text:
 			add_karma(message.reply_to_message.from_user)
+			res="повышена"
 			break
-	else:
-		return
+	else: return
+	for rep in bad_action:
+		if rep in text:
+			diff_karma(message.reply_to_message.from_user)
+			res="понижена"
+			break
+	else: return
 	curs.execute("select * from karma_user where ids=%s", (message.reply_to_message.from_user.id,))
 	user=curs.fetchall()
 	user=user[0]
 	name=user[2].strip() if user[2].strip() else user[3].strip()
-	bot.send_message(message.chat.id, f"Карма повышена.\nТекущая карма для {name}: *{user[1]}*.", parse_mode="Markdown")
+	bot.send_message(message.chat.id, f"Карма {res}.\nТекущая карма для {name}: *{user[1]}*.", parse_mode="Markdown")
 
 # if __name__=="__main__":
 # 	bot.polling(none_stop=True)
