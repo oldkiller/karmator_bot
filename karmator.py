@@ -91,7 +91,7 @@ def reputation(message):
 	user=curs.fetchall()
 	user=user[0]
 	name=user[2].strip() if user[2].strip() else user[3].strip()
-	bot.send_message(message.chat.id, f"Карма повышена.\n Текущая карма для {name}: {user[1]}.")
+	bot.send_message(message.chat.id, f"Карма повышена.\nТекущая карма для {name}: **{user[1]}**.")
 
 # if __name__=="__main__":
 # 	bot.polling(none_stop=True)
