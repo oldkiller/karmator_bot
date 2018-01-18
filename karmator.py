@@ -108,19 +108,19 @@ def reputation(message):
 	if message.from_user.id==message.reply_to_message.from_user.id:
 		bot.send_message(message.chat.id, "Нельзя добавлять карму самому себе.")
 		return
+	res=""
 	text=message.text.lower()
 	for rep in good_action:
 		if rep in text:
 			add_karma(message.reply_to_message.from_user)
 			res="повышена"
 			break
-	else: return
 	for rep in bad_action:
 		if rep in text:
 			diff_karma(message.reply_to_message.from_user)
 			res="понижена"
 			break
-	else: return
+	if not res: return
 	curs.execute("select * from karma_user where ids=%s", (message.reply_to_message.from_user.id,))
 	user=curs.fetchall()
 	user=user[0]
