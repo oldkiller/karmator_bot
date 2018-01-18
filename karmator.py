@@ -11,6 +11,8 @@ data = pg.connect(db_address)
 data.set_isolation_level(pg.extensions.ISOLATION_LEVEL_AUTOCOMMIT)
 curs=data.cursor()
 
+replylist=['спс', 'спасибо', 'сяп', 'благодарю','благодарность', 'помог','sps','spasibo']
+
 @bot.message_handler(commands=["start"])
 def start(message):
 	bot.send_message(message.chat.id, "Здравствуйте, я бот,\
@@ -19,10 +21,10 @@ def start(message):
 @bot.message_handler(commands=["help"])
 def helps(message):
 	help_mess="Текс, бот пока в альфе. Так что:\n\
-	1. Бот реагирует только на 'спс', и только если 'спс' стоит само\
-	 по себе, или отгорожено от остального текста пробелами\n\
+	1. Бот реагирует только на 8 слов, которые обозначают благодарность(2 в транслите)\n\
 	2. Карма общая для всех чатов\n\
-	3. Ограничений на выдачу кармы нет.\
+	3. Ограничений на выдачу кармы нет.\n\
+	4. Бот научился понимать слова в тексте более полноценно.\n\
 	Исходный код доступен по ссылке:\
 	https://github.com/oldkiller/karmator_bot"
 	bot.send_message(message.chat.id, help_mess)
@@ -75,10 +77,21 @@ def mykarm(message):
 
 @bot.message_handler(func=lambda message: True if message.reply_to_message else False)
 def reputation(message):
-	text=parse_message(message.text)
-	if "спс" in text["word"]:
-		add_karma(message.reply_to_message.from_user)
-		bot.send_message(message.chat.id, "Карма повышена")
+	if message.from_user.id==message.reply_to_message.from_user.id:
+		bot.send_message(message.chat.id, "Нельзя добавлять карму самому себе.")
+		return
+	text=message.text.lower()
+	for rep in replylist:
+		if rep in text:
+			add_karma(message.reply_to_message.from_user)
+			break
+	else:
+		return
+	curs.execute("select * from karma_user where ids=%s", (message.reply_to_message.from_user.id,))
+	user=curs.fetchall()
+	user=user[0]
+	name=user[2].strip() if user[2].strip() else user[3].strip()
+	bot.send_message(message.chat.id, f"Карма повышена.\n Текущая карма для {name}: {user[1]}.")
 
 # if __name__=="__main__":
 # 	bot.polling(none_stop=True)
