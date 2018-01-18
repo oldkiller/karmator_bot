@@ -11,7 +11,8 @@ data = pg.connect(db_address)
 data.set_isolation_level(pg.extensions.ISOLATION_LEVEL_AUTOCOMMIT)
 curs=data.cursor()
 
-replylist=['спс', 'спасибо', 'сяп', 'благодарю','благодарность', 'помог','sps','spasibo',"дякую"]
+replylist=['спс', 'спасибо', 'сяп', 'благодарю','благодарность', 'помог','sps','spasibo',"дякую", 
+			"бережи тебе боже"]
 
 @bot.message_handler(commands=["start"])
 def start(message):
