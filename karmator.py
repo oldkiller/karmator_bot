@@ -4,9 +4,9 @@ import hashlib
 import telebot
 import os
 
-tele_api=os.environ["telegram_token"]
+telegram_api=os.environ["telegram_token"]
 db_address=os.environ["DATABASE_URL"]
-bot = telebot.TeleBot("497913397:AAF1PnbwocP97InvSKLzsyvi0QLA7brW1-c")
+bot = telebot.TeleBot(telegram_api)
 data = pg.connect(db_address)
 data.set_isolation_level(pg.extensions.ISOLATION_LEVEL_AUTOCOMMIT)
 curs=data.cursor()
