@@ -22,7 +22,9 @@ def helps(message):
 	1. Бот реагирует только на 'спс', и только если 'спс' стоит само\
 	 по себе, или отгорожено от остального текста пробелами\n\
 	2. Карма общая для всех чатов\n\
-	3. Ограничений на выдачу кармы нет."
+	3. Ограничений на выдачу кармы нет.\
+	Исходный код доступен по ссылке:\
+	https://github.com/oldkiller/karmator_bot"
 	bot.send_message(message.chat.id, help_mess)
 
 def parse_message(text):
@@ -71,18 +73,12 @@ def mykarm(message):
 		else: name="Анон-юзер"
 		bot.send_message(message.chat.id, f"Вас еще не благодарили, {name}.")
 
-
 @bot.message_handler(func=lambda message: True if message.reply_to_message else False)
 def reputation(message):
-	print(message)
 	text=parse_message(message.text)
 	if "спс" in text["word"]:
 		add_karma(message.reply_to_message.from_user)
 		bot.send_message(message.chat.id, "Карма повышена")
-
-# @bot.message_handler(content_types=['text'])
-# def another_text(message):
-# 	print(message)
 
 # if __name__=="__main__":
 # 	bot.polling(none_stop=True)
@@ -109,5 +105,4 @@ def webhook_del(password):
 	else:
 		return "Invalid password", 200
 
-# print(os.environ.get('PORT', 5000), type(os.environ.get('PORT', 5000)))
 server.run(host="0.0.0.0", port=int(os.environ.get('PORT', 5000)))
