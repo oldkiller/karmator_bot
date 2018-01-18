@@ -26,8 +26,8 @@ def helps(message):
 	3. Ограничений на выдачу кармы нет.\n\
 	4. Бот научился понимать слова в тексте более полноценно.\n\
 	Исходный код доступен по ссылке:\
-	https://github.com/oldkiller/karmator_bot"
-	bot.send_message(message.chat.id, help_mess)
+	[github](https://github.com/oldkiller/karmator_bot)"
+	bot.send_message(message.chat.id, help_mess, parse_mode="Markdown")
 
 def parse_message(text):
 	text=text.split()
@@ -64,7 +64,7 @@ def mykarm(message):
 	if user:
 		user=user[0]
 		name=user[2].strip() if user[2].strip() else user[3].strip()
-		bot.send_message(message.chat.id, f"Текущая карма для {name}: {user[1]}.")
+		bot.send_message(message.chat.id, f"Текущая карма для {name}: **{user[1]}**.", parse_mode="Markdown")
 	else:
 		if message.from_user.first_name or message.from_user.last_name:
 			name=message.from_user.first_name if message.from_user.first_name else ""
@@ -91,7 +91,7 @@ def reputation(message):
 	user=curs.fetchall()
 	user=user[0]
 	name=user[2].strip() if user[2].strip() else user[3].strip()
-	bot.send_message(message.chat.id, f"Карма повышена.\nТекущая карма для {name}: **{user[1]}**.")
+	bot.send_message(message.chat.id, f"Карма повышена.\nТекущая карма для {name}: **{user[1]}**.", parse_mode="Markdown")
 
 # if __name__=="__main__":
 # 	bot.polling(none_stop=True)
