@@ -12,8 +12,10 @@ data.set_isolation_level(pg.extensions.ISOLATION_LEVEL_AUTOCOMMIT)
 curs=data.cursor()
 
 good_action=["спс", "спасибо", "сяп", "благодарю","благодарность", "помог","sps","spasibo","дякую", 
-			"бережи тебе боже"]
-bad_action=["говно", "пидор", "добровская"]
+			"бережи тебе боже","благодарочка","спаси тебя бог","сенкс","thank","аригато","респект",
+			"грациас","gracias"]
+bad_action=["говно", "пидор", "добровская","жопа","дебил","дурак","барбра стрейзанд",
+			"идиот","suka"]
 
 @bot.message_handler(commands=["start"])
 def start(message):
@@ -22,26 +24,16 @@ def start(message):
 
 @bot.message_handler(commands=["help"])
 def helps(message):
-	help_mess="Текс, бот пока в альфе. Так что:\n\
-	1. Бот реагирует только на 8 слов, которые обозначают благодарность(2 в транслите)\n\
+	help_mess="Текс, бот перешел в бету. Так что:\n\
+	1. Бот реагирует на *27* слов.\n\
 	2. Карма общая для всех чатов\n\
-	3. Ограничений на выдачу кармы нет.\n\
+	3. Ограничений на выдачу кармы нет(*пока*).\n\
 	4. Бот научился понимать слова в тексте более полноценно.\n\
+	5. Можно ругатся\n\
 	Исходный код доступен по ссылке:\
-	[github](https://github.com/oldkiller/karmator_bot)"
+	[github](https://github.com/oldkiller/karmator_bot)\n\
+	В создании брали участие: kira_nova, YoYoZ, syt0r"
 	bot.send_message(message.chat.id, help_mess, parse_mode="Markdown")
-
-def parse_message(text):
-	text=text.split()
-	res={"num":[],"word":[]}
-	if len(text)>40:
-		return res
-	for i in text:
-		if i.isnumeric():
-			res["num"].append(float(i))
-		else:
-			res["word"].append(i)
-	return res
 
 def add_karma(user):
 	curs.execute("select * from karma_user where ids=%s",(user.id,))
@@ -87,7 +79,6 @@ def mykarm(message):
 		if message.from_user.first_name or message.from_user.last_name:
 			name=message.from_user.first_name if message.from_user.first_name else ""
 			name+=message.from_user.last_name if message.from_user.last_name else ""
-			# name=str(message.from_user.first_name) +" "+ str(message.from_user.last_name)
 		elif message.from_user.username:
 			name=message.from_user.username
 		else: name="Анон-юзер"
@@ -95,9 +86,19 @@ def mykarm(message):
 
 @bot.message_handler(commands=["topbest"])
 def topbest(message):
-	curs.execute("select * from karma_user order by karma desc limit 10")
+	curs.execute("select * from karma_user where karma>0 order by karma desc limit 10")
 	user=curs.fetchall()
 	top_mess="Топ благодаримых:\n"
+	for i in range(len(user)):
+		name=user[i][2].strip() if user[i][2].strip() else user[i][3].strip()
+		top_mess+=f"*{i+1}*. {name}, ({user[i][1]} раз)\n"
+	bot.send_message(message.chat.id, top_mess, parse_mode="Markdown")
+
+@bot.message_handler(commands=["topbest"])
+def topbest(message):
+	curs.execute("select * from karma_user where karma<0 order by karma limit 10")
+	user=curs.fetchall()
+	top_mess="Топ ругаемых:\n"
 	for i in range(len(user)):
 		name=user[i][2].strip() if user[i][2].strip() else user[i][3].strip()
 		top_mess+=f"*{i+1}*. {name}, ({user[i][1]} раз)\n"
@@ -126,9 +127,6 @@ def reputation(message):
 	user=user[0]
 	name=user[2].strip() if user[2].strip() else user[3].strip()
 	bot.send_message(message.chat.id, f"Карма {res}.\nТекущая карма для {name}: *{user[1]}*.", parse_mode="Markdown")
-
-# if __name__=="__main__":
-# 	bot.polling(none_stop=True)
 
 server = Flask(__name__)
 
