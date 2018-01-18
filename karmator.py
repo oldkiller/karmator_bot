@@ -44,7 +44,11 @@ def add_karma(user):
 		curs.execute("update karma_user set karma=karma+1 where ids=%s",(user.id,))
 	else:
 		try:
-			curs.execute("insert into karma_user values(%s,%s,%s,%s)", (user.id,1,user.first_name+" "+user.last_name,user.username))
+			first_name=user.first_name if user.first_name else ""
+			last_name=user.last_name if user.last_name else ""
+			username=user.username if user.username else ""
+			curs.execute("insert into karma_user values(%s,%s,%s,%s)", 
+				(user.id,1,first_name+" "+last_name,username))
 		except Exception as e:
 			bot.send_message(message.chat.id, str(e))
 	data.commit()
@@ -54,14 +58,18 @@ def mykarm(message):
 	curs.execute("select * from karma_user where ids=%s", (message.from_user.id,))
 	user=curs.fetchall()
 	if user:
-		name=user[0][2].strip() if user[0][2].strip() else user[0][3].strip()
-		bot.send_message(message.chat.id, f"Текущая карма для {name}: {user[0][1]}.")
+		user=user[0]
+		name=user[2].strip() if user[2].strip() else user[3].strip()
+		bot.send_message(message.chat.id, f"Текущая карма для {name}: {user[1]}.")
 	else:
-		if message.from_user.first_name:
-			name=message.from_user.first_name + message.from_user.last_name 
-		else:
+		if message.from_user.first_name or message.from_user.last_name:
+			name=message.from_user.first_name if message.from_user.first_name else ""
+			name+=message.from_user.last_name if message.from_user.last_name else ""
+			# name=str(message.from_user.first_name) +" "+ str(message.from_user.last_name)
+		elif message.from_user.username:
 			name=message.from_user.username
-		bot.send_message(message.chat.id, "Вас еще не благодарили.")
+		else: name="Анон-юзер"
+		bot.send_message(message.chat.id, f"Вас еще не благодарили, {name}.")
 
 
 @bot.message_handler(func=lambda message: True if message.reply_to_message else False)
