@@ -76,6 +76,16 @@ def mykarm(message):
 		else: name="Анон-юзер"
 		bot.send_message(message.chat.id, f"Вас еще не благодарили, {name}.")
 
+@bot.message_handler(commands=["topbest"])
+def topbest(message):
+	curs.execute("select * from karma_user order by karma desc limit 10")
+	user=curs.fetchall()
+	top_mess="Топ благодаримых:\n"
+	for i in range(len(user)):
+		name=user[i][2].strip() if user[i][2].strip() else user[i][3].strip()
+		top_mess+=f"*{i+1}*. {name}\n"
+	bot.send_message(message.chat.id, top_mess, parse_mode="Markdown")
+
 @bot.message_handler(func=lambda message: True if message.reply_to_message else False)
 def reputation(message):
 	if message.from_user.id==message.reply_to_message.from_user.id:
