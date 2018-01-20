@@ -35,41 +35,50 @@ def helps(message):
 	В создании брали участие: kira_nova, YoYoZ, syt0r"
 	bot.send_message(message.chat.id, help_mess)
 
-def add_karma(user):
-	curs.execute("select * from karma_user where ids=%s",(user.id,))
+def add_karma(user,chat):
+	curs.execute("select * from karma_user where userid=%s and chatid=%s",
+		(user.id,chat.id))
 	news=curs.fetchall()
 	if news:
-		curs.execute("update karma_user set karma=karma+1 where ids=%s",(user.id,))
+		curs.execute("update karma_user set karma=karma+1 where userid=%s and chatid=%s",
+			(user.id,chat.id))
 	else:
 		try:
 			first_name=user.first_name if user.first_name else ""
 			last_name=user.last_name if user.last_name else ""
 			username=user.username if user.username else ""
-			curs.execute("insert into karma_user values(%s,%s,%s,%s)", 
-				(user.id,1,first_name+" "+last_name,username))
+			curs.execute("insert into karma_user values(%s,%s,%s,%s,%s)", 
+				(user.id,chat.id,1,first_name+" "+last_name,username))
 		except Exception as e:
 			bot.send_message(message.chat.id, str(e))
+	curs.execute("insert into limitation values(%s,%s,current_timestamp)",
+		(user.id,chat.id))
 	data.commit()
 
-def diff_karma(user):
-	curs.execute("select * from karma_user where ids=%s",(user.id,))
+def diff_karma(user,chat):
+	curs.execute("select * from karma_user where userid=%s and chatid=%s",
+		(user.id,chat.id))
 	news=curs.fetchall()
 	if news:
-		curs.execute("update karma_user set karma=karma-1 where ids=%s",(user.id,))
+		curs.execute("update karma_user set karma=karma-1 where userid=%s and chatid=%s",
+			(user.id,chat.id))
 	else:
 		try:
 			first_name=user.first_name if user.first_name else ""
 			last_name=user.last_name if user.last_name else ""
 			username=user.username if user.username else ""
-			curs.execute("insert into karma_user values(%s,%s,%s,%s)", 
-				(user.id,-1,first_name+" "+last_name,username))
+			curs.execute("insert into karma_user values(%s,%s,%s,%s,%s)", 
+				(user.id,chat.id,-1,first_name+" "+last_name,username))
 		except Exception as e:
 			bot.send_message(message.chat.id, str(e))
-	data.commit()	
+	curs.execute("insert into limitation values(%s,%s,current_timestamp)",
+		(user.id,chat.id))
+	data.commit()
 
 @bot.message_handler(commands=["mykarm"])
 def mykarm(message):
-	curs.execute("select * from karma_user where ids=%s", (message.from_user.id,))
+	curs.execute("select * from karma_user where userid=%s and chatid=%s",
+		(message.from_user.id,message.chat.id))
 	user=curs.fetchall()
 	if user:
 		user=user[0]
@@ -86,22 +95,26 @@ def mykarm(message):
 
 @bot.message_handler(commands=["topbest"])
 def topbest(message):
-	curs.execute("select * from karma_user where karma>0 order by karma desc limit 10")
+	curs.execute("select * from karma_user \
+		where karma>0 and chatid=%s \
+		order by karma desc limit 10",(message.chat.id,))
 	user=curs.fetchall()
 	top_mess="Топ благодаримых:\n"
 	for i in range(len(user)):
-		name=user[i][2].strip() if user[i][2].strip() else user[i][3].strip()
-		top_mess+=f"*{i+1}*. {name}, ({user[i][1]} раз)\n"
+		name=user[i][3].strip() if user[i][3].strip() else user[i][4].strip()
+		top_mess+=f"*{i+1}*. {name}, ({user[i][2]} раз)\n"
 	bot.send_message(message.chat.id, top_mess, parse_mode="Markdown")
 
 @bot.message_handler(commands=["topbad"])
 def topbest(message):
-	curs.execute("select * from karma_user where karma<0 order by karma limit 10")
+	curs.execute("select * from karma_user \
+		where karma<0 and chatid=%s\
+		order by karma limit 10", (message.chat.id))
 	user=curs.fetchall()
 	top_mess="Топ ругаемых:\n"
 	for i in range(len(user)):
-		name=user[i][2].strip() if user[i][2].strip() else user[i][3].strip()
-		top_mess+=f"*{i+1}*. {name}, ({user[i][1]} раз)\n"
+		name=user[i][3].strip() if user[i][3].strip() else user[i][4].strip()
+		top_mess+=f"*{i+1}*. {name}, ({user[i][2]} раз)\n"
 	bot.send_message(message.chat.id, top_mess, parse_mode="Markdown")
 
 @bot.message_handler(func=lambda message: True if message.reply_to_message else False)
@@ -109,24 +122,33 @@ def reputation(message):
 	if message.from_user.id==message.reply_to_message.from_user.id:
 		bot.send_message(message.chat.id, "Нельзя добавлять карму самому себе.")
 		return
+	curs.execute("select * from limitation where \
+		timer>current_timestamp-interval'1 hour' \
+		and userid=%s and chatid=%s",
+		(message.from_user.id,message.chat.id))
+	isacc=curs.fetchall()
+	if len(isacc)>5:
+		bot.send_message(message.chat.id, "Не спамь")
+		return
 	res=""
 	text=message.text.lower()
 	for rep in good_action:
 		if rep in text:
-			add_karma(message.reply_to_message.from_user)
+			add_karma(message.reply_to_message.from_user,message.chat)
 			res="повышена"
 			break
 	for rep in bad_action:
 		if rep in text:
-			diff_karma(message.reply_to_message.from_user)
+			diff_karma(message.reply_to_message.from_user,message.chat)
 			res="понижена"
 			break
 	if not res: return
-	curs.execute("select * from karma_user where ids=%s", (message.reply_to_message.from_user.id,))
+	curs.execute("select * from karma_user where userid=%s and chatid=%s", 
+		(message.reply_to_message.from_user.id,message.chat.id))
 	user=curs.fetchall()
 	user=user[0]
-	name=user[2].strip() if user[2].strip() else user[3].strip()
-	bot.send_message(message.chat.id, f"Карма {res}.\nТекущая карма для {name}: *{user[1]}*.", parse_mode="Markdown")
+	name=user[3].strip() if user[3].strip() else user[4].strip()
+	bot.send_message(message.chat.id, f"Карма {res}.\nТекущая карма для {name}: *{user[2]}*.", parse_mode="Markdown")
 
 server = Flask(__name__)
 
