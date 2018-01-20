@@ -35,7 +35,7 @@ def helps(message):
 	В создании брали участие: kira_nova, YoYoZ, syt0r"
 	bot.send_message(message.chat.id, help_mess)
 
-def add_karma(user,chat):
+def add_karma(user,user2,chat):
 	curs.execute("select * from karma_user where userid=%s and chatid=%s",
 		(user.id,chat.id))
 	news=curs.fetchall()
@@ -52,10 +52,10 @@ def add_karma(user,chat):
 		except Exception as e:
 			print(str(e))
 	curs.execute("insert into limitation values(%s,%s,current_timestamp)",
-		(user.id,chat.id))
+		(user2.id,chat.id))
 	data.commit()
 
-def diff_karma(user,chat):
+def diff_karma(user,user2,chat):
 	curs.execute("select * from karma_user where userid=%s and chatid=%s",
 		(user.id,chat.id))
 	news=curs.fetchall()
@@ -72,7 +72,7 @@ def diff_karma(user,chat):
 		except Exception as e:
 			print(str(e))
 	curs.execute("insert into limitation values(%s,%s,current_timestamp)",
-		(user.id,chat.id))
+		(user2.id,chat.id))
 	data.commit()
 
 @bot.message_handler(commands=["mykarm"])
@@ -135,12 +135,14 @@ def reputation(message):
 	text=message.text.lower()
 	for rep in good_action:
 		if rep in text:
-			add_karma(message.reply_to_message.from_user,message.chat)
+			add_karma(message.reply_to_message.from_user,
+				message.from_user,message.chat)
 			res="повышена"
 			break
 	for rep in bad_action:
 		if rep in text:
-			diff_karma(message.reply_to_message.from_user,message.chat)
+			diff_karma(message.reply_to_message.from_user,
+				message.from_user,message.chat)
 			res="понижена"
 			break
 	if not res: return
