@@ -128,7 +128,7 @@ def reputation(message):
 		(message.from_user.id,message.chat.id))
 	isacc=curs.fetchall()
 	print(isacc, len(isacc))
-	if len(isacc)>5:
+	if len(isacc)>=5:
 		bot.send_message(message.chat.id, "Не спамь")
 		return
 	res=""
