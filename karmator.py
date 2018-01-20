@@ -50,7 +50,7 @@ def add_karma(user,chat):
 			curs.execute("insert into karma_user values(%s,%s,%s,%s,%s)", 
 				(user.id,chat.id,1,first_name+" "+last_name,username))
 		except Exception as e:
-			bot.send_message(message.chat.id, str(e))
+			print(str(e))
 	curs.execute("insert into limitation values(%s,%s,current_timestamp)",
 		(user.id,chat.id))
 	data.commit()
@@ -70,7 +70,7 @@ def diff_karma(user,chat):
 			curs.execute("insert into karma_user values(%s,%s,%s,%s,%s)", 
 				(user.id,chat.id,-1,first_name+" "+last_name,username))
 		except Exception as e:
-			bot.send_message(message.chat.id, str(e))
+			print(str(e))
 	curs.execute("insert into limitation values(%s,%s,current_timestamp)",
 		(user.id,chat.id))
 	data.commit()
