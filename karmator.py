@@ -106,10 +106,10 @@ def topbest(message):
 	bot.send_message(message.chat.id, top_mess, parse_mode="Markdown")
 
 @bot.message_handler(commands=["topbad"])
-def topbest(message):
+def topbad(message):
 	curs.execute("select * from karma_user \
 		where karma<0 and chatid=%s\
-		order by karma limit 10", (message.chat.id))
+		order by karma limit 10", (message.chat.id,))
 	user=curs.fetchall()
 	top_mess="Топ ругаемых:\n"
 	for i in range(len(user)):
