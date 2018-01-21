@@ -126,21 +126,25 @@ def reputation(message):
 		timer>current_timestamp-interval'1 hour' \
 		and userid=%s and chatid=%s",
 		(message.from_user.id,message.chat.id))
-	isacc=curs.fetchall()
-	print(isacc, len(isacc))
-	if len(isacc)>=5:
-		bot.send_message(message.chat.id, "Не спамь")
-		return
+	sends=curs.fetchall()
+	sends=True if len(sends)>=5 else False
+	# bot.send_message(message.chat.id, "Не спамь")
 	res=""
 	text=message.text.lower()
 	for rep in good_action:
 		if rep in text:
+			if sends:
+				bot.send_message(message.chat.id, "Не спамь")
+				return
 			add_karma(message.reply_to_message.from_user,
 				message.from_user,message.chat)
 			res="повышена"
 			break
 	for rep in bad_action:
 		if rep in text:
+			if sends:
+				bot.send_message(message.chat.id, "Не спамь")
+				return
 			diff_karma(message.reply_to_message.from_user,
 				message.from_user,message.chat)
 			res="понижена"
