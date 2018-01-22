@@ -164,7 +164,7 @@ def reputation(message):
 	curs.execute("select * from karma_user where userid=%s and chatid=%s", 
 		(message.reply_to_message.from_user.id, message.chat.id))
 	user=curs.fetchone()
-	name=user[3].strip() if user[3].isspace() else user[4].strip()
+	name=user[3].strip() if not user[3].isspace() else user[4].strip()
 	bot.send_message(message.chat.id, f"Карма {res}.\nТекущая карма для {name}: *{user[2]}*.", parse_mode="Markdown")
 
 # @bot.message_handler(func=lambda message: True if message.reply_to_message else False)
