@@ -58,7 +58,7 @@ def mykarm(message):
 	user=curs.fetchone()
 	if user:
 		name=user[3].strip() if user[3].isspace() else user[4].strip()
-		bot.send_message(message.chat.id, f"Текущая карма для {name}: *{user[1]}*.", parse_mode="Markdown")
+		bot.send_message(message.chat.id, f"Текущая карма для {name}: *{user[2]}*.", parse_mode="Markdown")
 	else:
 		if message.from_user.first_name or message.from_user.last_name:
 			name=message.from_user.first_name if message.from_user.first_name else ""
