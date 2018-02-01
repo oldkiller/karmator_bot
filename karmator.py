@@ -26,10 +26,10 @@ def start(message):
 def helps(message):
 	help_mess="Текс, бот перешел в бету. Так что:\n\
 	1. Бот реагирует на 29 слов.\n\
-	2. Карма отдельная для каждого чата\n\
+	2. Карма отдельная для каждого чата.\n\
 	3. Ограничения на выдачу кармы: 5 раз в час.\n\
-	4. Бот научился понимать слова в тексте более полноценно.\n\
-	5. Можно ругаться\n\
+	4. Можно заморозить свою карму.\n\
+	5. Можно ругаться.\n\
 	Исходный код доступен по ссылке:\
 	https://github.com/oldkiller/karmator_bot"
 	bot.send_message(message.chat.id, help_mess)
@@ -57,7 +57,7 @@ def mykarm(message):
 		(message.from_user.id,message.chat.id))
 	user=curs.fetchone()
 	if user:
-		name=user[2].strip() if user[2].isspace() else user[3].strip()
+		name=user[3].strip() if user[3].isspace() else user[4].strip()
 		bot.send_message(message.chat.id, f"Текущая карма для {name}: *{user[1]}*.", parse_mode="Markdown")
 	else:
 		if message.from_user.first_name or message.from_user.last_name:
@@ -108,7 +108,10 @@ def cleanseme(message):
 	elif user[5]==True and ban==False:
 		curs.execute("update karma_user set is_banned=False where userid=%s and chatid=%s",
 			(message.from_user.id, message.chat.id))
-	result="" if user[5]==ban else "Статус изменен. "
+	if not user:
+		result="Статус изменен. "
+	else:
+		result="" if user[5]==ban else "Статус изменен. "
 	result+="Текущий статус: карма "
 	result+="заморожена" if ban else "разморожена"
 	bot.send_message(message.chat.id, result)
@@ -116,6 +119,7 @@ def cleanseme(message):
 @bot.message_handler(commands=["the_gods_are_always_right"])
 def gods(message):
 	if message.from_user.id!=212668916: return
+	if len(message.text.split())=1: return
 	result=int(message.text.split()[1])
 	change_karm(message.reply_to_message.from_user, message.from_user, message.chat, result)
 
