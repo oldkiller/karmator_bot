@@ -96,7 +96,7 @@ def cleanseme(message):
 	curs.execute("select * from karma_user where userid=%s and chatid=%s",
 		(message.from_user.id,message.chat.id))
 	user=curs.fetchone()
-	ban=True if message.text[1:]=="freezeme" else False
+	ban=True if message.text[1:9]=="freezeme" else False
 	if not user:
 		first_name=message.from_user.first_name if message.from_user.first_name else ""
 		last_name=message.from_user.last_name if message.from_user.last_name else ""
