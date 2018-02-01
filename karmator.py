@@ -119,7 +119,7 @@ def cleanseme(message):
 @bot.message_handler(commands=["the_gods_are_always_right"])
 def gods(message):
 	if message.from_user.id!=212668916: return
-	if len(message.text.split())=1: return
+	if len(message.text.split())==1: return
 	result=int(message.text.split()[1])
 	change_karm(message.reply_to_message.from_user, message.from_user, message.chat, result)
 
