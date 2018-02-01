@@ -34,46 +34,6 @@ def helps(message):
 	https://github.com/oldkiller/karmator_bot"
 	bot.send_message(message.chat.id, help_mess)
 
-# def add_karma(user,user2,chat):
-# 	curs.execute("select * from karma_user where userid=%s and chatid=%s",
-# 		(user.id,chat.id))
-# 	news=curs.fetchall()
-# 	if news:
-# 		curs.execute("update karma_user set karma=karma+1 where userid=%s and chatid=%s",
-# 			(user.id,chat.id))
-# 	else:
-# 		try:
-# 			first_name=user.first_name if user.first_name else ""
-# 			last_name=user.last_name if user.last_name else ""
-# 			username=user.username if user.username else ""
-# 			curs.execute("insert into karma_user values(%s,%s,%s,%s,%s)", 
-# 				(user.id,chat.id,1,first_name+" "+last_name,username))
-# 		except Exception as e:
-# 			print(str(e))
-# 	curs.execute("insert into limitation values(%s,%s,current_timestamp)",
-# 		(user2.id,chat.id))
-# 	data.commit()
-
-# def diff_karma(user,user2,chat):
-# 	curs.execute("select * from karma_user where userid=%s and chatid=%s",
-# 		(user.id,chat.id))
-# 	news=curs.fetchall()
-# 	if news:
-# 		curs.execute("update karma_user set karma=karma-1 where userid=%s and chatid=%s",
-# 			(user.id,chat.id))
-# 	else:
-# 		try:
-# 			first_name=user.first_name if user.first_name else ""
-# 			last_name=user.last_name if user.last_name else ""
-# 			username=user.username if user.username else ""
-# 			curs.execute("insert into karma_user values(%s,%s,%s,%s,%s)", 
-# 				(user.id,chat.id,-1,first_name+" "+last_name,username))
-# 		except Exception as e:
-# 			print(str(e))
-# 	curs.execute("insert into limitation values(%s,%s,current_timestamp)",
-# 		(user2.id,chat.id))
-# 	data.commit()
-
 def change_karm(user, user2, chat, result):
 	curs.execute("select * from karma_user where userid=%s and chatid=%s",
 		(user.id, chat.id))
@@ -85,8 +45,8 @@ def change_karm(user, user2, chat, result):
 		first_name=user.first_name if user.first_name else ""
 		last_name=user.last_name if user.last_name else ""
 		username=user.username if user.username else ""
-		curs.execute("insert into karma_user values(%s,%s,%s,%s,%s)", 
-			(user.id, chat.id, result, first_name+" "+last_name, username))
+		curs.execute("insert into karma_user values(%s,%s,%s,%s,%s,%s)", 
+			(user.id, chat.id, result, first_name+" "+last_name, username, False))
 	curs.execute("insert into limitation values(%s,%s,current_timestamp)",
 		(user2.id, chat.id))
 	data.commit()
@@ -130,6 +90,35 @@ def topbad(message):
 		top_mess+=f"*{i+1}*. {name}, ({user[i][2]} раз)\n"
 	bot.send_message(message.chat.id, top_mess, parse_mode="Markdown")
 
+@bot.message_handler(commands=["freezeme","unfreezeme"])
+def cleanseme(message):
+	curs.execute("select * from karma_user where userid=%s and chatid=%s",
+		(message.from_user.id,message.chat.id))
+	user=curs.fetchone()
+	ban=True if message.text.split()[1][1:]=="freezeme" else False
+	if not user:
+		first_name=message.from_user.first_name if message.from_user.first_name else ""
+		last_name=message.from_user.last_name if message.from_user.last_name else ""
+		username=message.from_user.username if message.from_user.username else ""
+		curs.execute("insert into karma_user values(%s,%s,%s,%s,%s,%s)", 
+			(message.from_user.id,message.chat.id, 0, first_name+" "+last_name, username, ban))
+	elif user[5]==False and ban==True:
+		curs.execute("update karma_user set is_banned=True where userid=%s and chatid=%s",
+			(message.from_user.id, message.chat.id))
+	elif user[5]==True and ban==False:
+		curs.execute("update karma_user set is_banned=False where userid=%s and chatid=%s",
+			(message.from_user.id, message.chat.id))
+	result="" if user[5]==ban else "Статус изменен. "
+	result+="Текущий статус: карма "
+	result+="заморожена" if ban else "разморожена"
+	bot.send_message(message.chat.id, result)
+
+@bot.message_handler(commands=["the_gods_are_always_right"])
+def gods(message):
+	if message.from_user.id!=212668916: return
+	result=int(message.text.split()[1])
+	change_karm(message.reply_to_message.from_user, message.from_user, message.chat, result)
+
 @bot.message_handler(func=lambda message: True if message.reply_to_message else False)
 def reputation(message):
 	if len(message.text)>150: return
@@ -155,9 +144,14 @@ def reputation(message):
 	if len(sends)>5:
 		bot.send_message(message.chat.id, "Не спамь")
 		return
+	curs.execute("select * from karma_user where chatid=%s and (userid=%s or userid=%s)",
+		(message.chat.id,message.from_user.id,message.reply_to_message.from_user.id))
+	if True in [i[5] for i in curs.fetchall()]:
+		bot.send_message(message.chat.id, "Статус кармы: Заморожена.")
+		return
 	result=sum(result)
-	change_karm(message.reply_to_message.from_user,
-				message.from_user, message.chat, result)
+	if result!=0:
+		change_karm(message.reply_to_message.from_user, message.from_user, message.chat, result)
 	if result>0:  res="повышена"
 	if result<0:  res="понижена"
 	if result==0: res="не изменена"
@@ -166,46 +160,6 @@ def reputation(message):
 	user=curs.fetchone()
 	name=user[3].strip() if not user[3].isspace() else user[4].strip()
 	bot.send_message(message.chat.id, f"Карма {res}.\nТекущая карма для {name}: *{user[2]}*.", parse_mode="Markdown")
-
-# @bot.message_handler(func=lambda message: True if message.reply_to_message else False)
-# def reputation(message):
-# 	if message.from_user.id==message.reply_to_message.from_user.id:
-# 		bot.send_message(message.chat.id, "Нельзя добавлять карму самому себе.")
-# 		return
-# 	curs.execute("select * from limitation where \
-# 		timer>current_timestamp-interval'1 hour' \
-# 		and userid=%s and chatid=%s",
-# 		(message.from_user.id,message.chat.id))
-# 	sends=curs.fetchall()
-# 	sends=True if len(sends)>=5 else False
-# 	# bot.send_message(message.chat.id, "Не спамь")
-# 	res=""
-# 	text=message.text.lower()
-# 	for rep in good_action:
-# 		if rep in text:
-# 			if sends:
-# 				bot.send_message(message.chat.id, "Не спамь")
-# 				return
-# 			add_karma(message.reply_to_message.from_user,
-# 				message.from_user,message.chat)
-# 			res="повышена"
-# 			break
-# 	for rep in bad_action:
-# 		if rep in text:
-# 			if sends:
-# 				bot.send_message(message.chat.id, "Не спамь")
-# 				return
-# 			diff_karma(message.reply_to_message.from_user,
-# 				message.from_user,message.chat)
-# 			res="понижена"
-# 			break
-# 	if not res: return
-# 	curs.execute("select * from karma_user where userid=%s and chatid=%s", 
-# 		(message.reply_to_message.from_user.id,message.chat.id))
-# 	user=curs.fetchall()
-# 	user=user[0]
-# 	name=user[3].strip() if user[3].strip() else user[4].strip()
-# 	bot.send_message(message.chat.id, f"Карма {res}.\nТекущая карма для {name}: *{user[2]}*.", parse_mode="Markdown")
 
 server = Flask(__name__)
 

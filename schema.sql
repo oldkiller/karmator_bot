@@ -1,14 +1,15 @@
 -- create base table
-CREATE TABLE public.karma_user (
+CREATE TABLE karma_user (
 	userid int NOT NULL,
 	chatid int NOT NULL,
 	karma int NULL DEFAULT 0,
 	user_name char(100) NULL,
 	user_nick char(50) NULL,
+	is_banned bool,
 	PRIMARY KEY (userid,chatid))
 
 -- create table for limiting karm
-CREATE TABLE public.limitation (
+CREATE TABLE limitation (
 	userid int not null,
 	chatid int not null,
 	timer TIMESTAMP not NULL)
