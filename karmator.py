@@ -24,6 +24,10 @@ def start(message):
 
 @bot.message_handler(commands=["help"])
 def helps(message):
+	text=message.text.split("@")
+	if len(text)>1:
+		if text[1]!="Karmator_bot":
+			return
 	help_mess="Текс, бот перешел в бету. Так что:\n\
 	1. Бот реагирует на 29 слов.\n\
 	2. Карма отдельная для каждого чата.\n\
