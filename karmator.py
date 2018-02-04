@@ -11,34 +11,48 @@ data = pg.connect(db_address)
 data.set_isolation_level(pg.extensions.ISOLATION_LEVEL_AUTOCOMMIT)
 curs=data.cursor()
 
-good_action=["спс", "спасибо", "сяп", "благодарю","благодарность", "помог","sps","spasibo","дякую", 
-			"бережи тебе боже","благодарочка","спаси тебя бог","сенкс","thank","аригато","респект",
-			"грациас","gracias","храни тебя бог"]
-bad_action=["говно", "пидор", "добровская","жопа","дебил","дурак","барбра стрейзанд",
-			"идиот","suka","сука","мразь","бакун","юрченко","мирон"]
+# Слова, на которые реагирует бот
+good_words=["спс", "спасибо", "сяп", "благодарю", "благодарность", "помог", "sps", "spasibo", "дякую", 
+			"бережи тебе боже", "благодарочка", "спаси тебя бог", "сенкс", "thank", "аригато", "респект",
+			"грациас", "gracias", "храни тебя бог"]
+bad_word=["говно", "пидор", "добровская", "жопа", "дебил", "дурак", "барбра стрейзанд",
+			"идиот", "suka", "сука", "мразь", "бакун", "юрченко", "мирон"]
 
 @bot.message_handler(commands=["start"])
 def start(message):
+	if message.text!="/start@Karmator_bot": return
 	bot.send_message(message.chat.id, "Здравствуйте, я бот,\
 	 который отвечает за подсчет кармы в групповых чатах.")
 
 @bot.message_handler(commands=["help"])
 def helps(message):
-	text=message.text.split("@")
-	if len(text)>1:
-		if text[1]!="Karmator_bot":
-			return
-	help_mess="Текс, бот перешел в бету. Так что:\n\
-	1. Бот реагирует на 29 слов.\n\
-	2. Карма отдельная для каждого чата.\n\
-	3. Ограничения на выдачу кармы: 5 раз в час.\n\
-	4. Можно заморозить свою карму.\n\
-	5. Можно ругаться.\n\
+	if message.text!="/help@Karmator_bot": return
+	help_mess="Правила работы бота:\
+	\n0. Выражения похвалы повышают карму, ругательства понижают.\
+	\n1. Ограничения на выдачу кармы: 5 раз в час.\
+	\n2. Можно повышать и понижать карму.\
+	\n3. Можно заморозить свою карму. \
+	При этом ограничивается и выдача, и получение.\
+	\nДоступны следующие комманды:\
+	\n/mykarm Для просмотра своей кармы.\
+	\n/topbest Для того, что-бы узнать наиболее благодаримых в этом чате. \
+	\n/topbad Для того, что-бы узнать наиболее ругаемых в этом чате.\
+	\n/freezeme Для заморозки своей кармы.\
+	\n/unfreezeme Для разморозки своей кармы.\
 	Исходный код доступен по ссылке:\
 	https://github.com/oldkiller/karmator_bot"
 	bot.send_message(message.chat.id, help_mess)
 
-def change_karm(user, user2, chat, result):
+def select_user(user, chat, ones=True)
+	select_user_str="select * from karma_user where userid=%s and chatid=%s"
+	curs.execute(select_user_str, (user.id, chat.id))
+	if ones:
+		result = curs.fetchone()
+	else:
+		result = curs.fetchall()
+	return result
+
+def change_karm(user, chat, result):
 	curs.execute("select * from karma_user where userid=%s and chatid=%s",
 		(user.id, chat.id))
 	news=curs.fetchall()
@@ -51,17 +65,18 @@ def change_karm(user, user2, chat, result):
 		username=user.username if user.username else ""
 		curs.execute("insert into karma_user values(%s,%s,%s,%s,%s,%s)", 
 			(user.id, chat.id, result, first_name+" "+last_name, username, False))
+	data.commit()
+
+def limitation(user,chat):
 	curs.execute("insert into limitation values(%s,%s,current_timestamp)",
-		(user2.id, chat.id))
+		(user.id, chat.id))
 	data.commit()
 
 @bot.message_handler(commands=["mykarm"])
 def mykarm(message):
-	curs.execute("select * from karma_user where userid=%s and chatid=%s",
-		(message.from_user.id,message.chat.id))
-	user=curs.fetchone()
+	if message.text != "/mykarm@Karmator_bot": return
+	user = select_user(message.from_user, message.chat)
 	if user:
-		print(user)
 		name=user[3].strip() if user[3].isspace() else user[4].strip()
 		bot.send_message(message.chat.id, f"Текущая карма для {name}: <b>{user[2]}</b>.", parse_mode="HTML")
 	else:
@@ -75,6 +90,7 @@ def mykarm(message):
 
 @bot.message_handler(commands=["topbest"])
 def topbest(message):
+	if message.text!="/topbest@Karmator_bot": return
 	curs.execute("select * from karma_user where karma>0 and chatid=%s \
 		order by karma desc limit 10", (message.chat.id,))
 	user=curs.fetchall()
@@ -86,6 +102,7 @@ def topbest(message):
 
 @bot.message_handler(commands=["topbad"])
 def topbad(message):
+	if message.text!="/topbad@Karmator_bot": return
 	curs.execute("select * from karma_user where karma<0 and chatid=%s\
 		order by karma limit 10", (message.chat.id,))
 	user=curs.fetchall()
@@ -97,9 +114,9 @@ def topbad(message):
 
 @bot.message_handler(commands=["freezeme","unfreezeme"])
 def cleanseme(message):
-	curs.execute("select * from karma_user where userid=%s and chatid=%s",
-		(message.from_user.id,message.chat.id))
-	user=curs.fetchone()
+	if message.text in ["/freezeme@Karmator_bot","/unfreezeme@Karmator_bot"]: 
+		return
+	user = select_user(message.from_user,message.chat)
 	ban=True if message.text[1:9]=="freezeme" else False
 	if not user:
 		first_name=message.from_user.first_name if message.from_user.first_name else ""
@@ -126,18 +143,18 @@ def gods(message):
 	if message.from_user.id!=212668916: return
 	if len(message.text.split())==1: return
 	result=int(message.text.split()[1])
-	change_karm(message.reply_to_message.from_user, message.from_user, message.chat, result)
+	change_karm(message.reply_to_message.from_user, message.chat, result)
 
 @bot.message_handler(func=lambda message: True if message.reply_to_message else False)
 def reputation(message):
 	if len(message.text)>150: return
 	result=[]
 	text=message.text.lower()
-	for rep in good_action:
+	for rep in good_words:
 		if rep in text:
 			result.append(1)
 			break
-	for rep in bad_action:
+	for rep in bad_word:
 		if rep in text:
 			result.append(-1)
 			break
@@ -154,16 +171,17 @@ def reputation(message):
 		bot.send_message(message.chat.id, "Не спамь")
 		return
 	curs.execute("select * from karma_user where chatid=%s and (userid=%s or userid=%s)",
-		(message.chat.id,message.from_user.id,message.reply_to_message.from_user.id))
+		(message.chat.id, message.from_user.id, message.reply_to_message.from_user.id))
 	if True in [i[5] for i in curs.fetchall()]:
 		bot.send_message(message.chat.id, "Статус кармы: Заморожена.")
 		return
 	result=sum(result)
 	if result!=0:
-		change_karm(message.reply_to_message.from_user, message.from_user, message.chat, result)
-	if result>0:  res="повышена"
-	if result<0:  res="понижена"
-	if result==0: res="не изменена"
+		limitation(message.from_user, message.chat)
+		change_karm(message.reply_to_message.from_user, message.chat, result)
+	if result>0:    res="повышена"
+	elif result<0:  res="понижена"
+	elif result==0: res="не изменена"
 	curs.execute("select * from karma_user where userid=%s and chatid=%s", 
 		(message.reply_to_message.from_user.id, message.chat.id))
 	user=curs.fetchone()
