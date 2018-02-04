@@ -43,7 +43,7 @@ def helps(message):
 	https://github.com/oldkiller/karmator_bot"
 	bot.send_message(message.chat.id, help_mess)
 
-def select_user(user, chat, ones=True)
+def select_user(user, chat, ones=True):
 	select_user_str="select * from karma_user where userid=%s and chatid=%s"
 	curs.execute(select_user_str, (user.id, chat.id))
 	if ones:
