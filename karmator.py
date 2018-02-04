@@ -30,8 +30,7 @@ def helps(message):
 	help_mess="Правила работы бота:\
 	\n0. Выражения похвалы повышают карму, ругательства понижают.\
 	\n1. Ограничения на выдачу кармы: 5 раз в час.\
-	\n2. Можно повышать и понижать карму.\
-	\n3. Можно заморозить свою карму. \
+	\n2. Можно заморозить свою карму.\
 	При этом ограничивается и выдача, и получение.\
 	\nДоступны следующие комманды:\
 	\n/mykarm Для просмотра своей кармы.\
@@ -39,7 +38,7 @@ def helps(message):
 	\n/topbad Для того, что-бы узнать наиболее ругаемых в этом чате.\
 	\n/freezeme Для заморозки своей кармы.\
 	\n/unfreezeme Для разморозки своей кармы.\
-	Исходный код доступен по ссылке:\
+	\nИсходный код доступен по ссылке:\
 	https://github.com/oldkiller/karmator_bot"
 	bot.send_message(message.chat.id, help_mess)
 
@@ -114,7 +113,7 @@ def topbad(message):
 
 @bot.message_handler(commands=["freezeme","unfreezeme"])
 def cleanseme(message):
-	if message.text in ["/freezeme@Karmator_bot","/unfreezeme@Karmator_bot"]: 
+	if not message.text in ["/freezeme@Karmator_bot","/unfreezeme@Karmator_bot"]: 
 		return
 	user = select_user(message.from_user,message.chat)
 	ban=True if message.text[1:9]=="freezeme" else False
