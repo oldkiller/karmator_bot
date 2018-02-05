@@ -42,28 +42,23 @@ def helps(message):
 	https://github.com/oldkiller/karmator_bot"
 	bot.send_message(message.chat.id, help_mess)
 
-def select_user(user, chat, ones=True):
+def select_user(user, chat):
 	select_user_str="select * from karma_user where userid=%s and chatid=%s"
 	curs.execute(select_user_str, (user.id, chat.id))
-	if ones:
-		result = curs.fetchone()
-	else:
-		result = curs.fetchall()
-	return result
+	return curs.fetchone()
+
+def insert_user(user, chat):
+	first_name=user.first_name if user.first_name else ""
+	last_name=user.last_name if user.last_name else ""
+	username=user.username if user.username else ""
+	curs.execute("insert into karma_user values(%s,%s,%s,%s,%s,%s)", 
+		(user.id, chat.id, 0, first_name+" "+last_name, username, False))
 
 def change_karm(user, chat, result):
-	curs.execute("select * from karma_user where userid=%s and chatid=%s",
-		(user.id, chat.id))
-	news=curs.fetchall()
-	if news:
-		curs.execute("update karma_user set karma=karma+%s where userid=%s and chatid=%s",
-			(result, user.id, chat.id))
-	else:
-		first_name=user.first_name if user.first_name else ""
-		last_name=user.last_name if user.last_name else ""
-		username=user.username if user.username else ""
-		curs.execute("insert into karma_user values(%s,%s,%s,%s,%s,%s)", 
-			(user.id, chat.id, result, first_name+" "+last_name, username, False))
+	news = select_user(user, chat)
+	if not news: insert_user(user, chat)
+	curs.execute("update karma_user set karma=karma+%s where userid=%s and chatid=%s",
+		(result, user.id, chat.id))
 	data.commit()
 
 def limitation(user,chat):
