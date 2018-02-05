@@ -159,7 +159,7 @@ def freezeme(message):
 	if user[5]!=ban:
 		curs.execute("update karma_user set is_banned=not is_banned where \
 			userid=%s and chatid=%s", (message.from_user.id, message.chat.id))
-	result="" if user[5]!=ban else "Статус изменен. "
+	result="Статус изменен. " if user[5]!=ban else ""
 	result+="Текущий статус: карма "
 	result+="заморожена" if ban else "разморожена"
 	bot.send_message(message.chat.id, result)
@@ -227,7 +227,7 @@ def reputation(message):
 	if result!=0:
 		limitation(message.from_user, message.chat)
 		change_karm(message.reply_to_message.from_user, message.chat, result)
-	
+
 	if result>0:    res="повышена"
 	elif result<0:  res="понижена"
 	elif result==0: res="не изменена"
