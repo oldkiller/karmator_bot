@@ -12,26 +12,36 @@ data.set_isolation_level(pg.extensions.ISOLATION_LEVEL_AUTOCOMMIT)
 curs=data.cursor()
 
 # Слова, на которые реагирует бот
-good_words=["спс", "спасибо", "сяп", "благодарю", "благодарность", "помог", 
+good_words=["спс", "спасибо", "сяп", "благодарю", "благодарность", "помог ", 
 			"sps", "spasibo", "дякую", "бережи тебе боже", "благодарочка", 
-			"спаси тебя бог", "сенкс", "thank", "аригато", "респект",
-			"грациас", "gracias", "храни тебя бог"]
-bad_word=["говно", "пидор", "добровская", "жопа", "дебил", "дурак", 
-			"барбра стрейзанд",	"идиот", "suka", "сука", "мразь", "бакун", 
-			"юрченко", "мирон"]
+			"спаси тебя бог", "сенкс", "thank", "аригато", "респект", "храни тебя бог"]
+bad_word=["говно", "пидор", "хуй", "давалка", "хер", "пенис", 
+			"добровская", "жопа", "дебил", "дурак", "идиот", 
+			"suka", "сука", "мразь", "бакун", "юрченко", "мирон"]
+
+def isMyMessage(text):
+	# В групповых чатах нужно быть уверенным, 
+	# что сообщение относится именно к этому боту
+	text=text.split()[0]
+	text=text.split("@")
+	if len(text)>1:
+		if text[1]=="Karmator_bot":
+			return True
+		else: return False
+	return True
 
 @bot.message_handler(commands=["start"])
 def start(message):
-	if message.text!="/start@Karmator_bot": return
+	if not isMyMessage(message.text): return
 	bot.send_message(message.chat.id, "Здравствуйте, я бот,\
 	 который отвечает за подсчет кармы в групповых чатах.")
 
 @bot.message_handler(commands=["help"])
 def helps(message):
-	if message.text!="/help@Karmator_bot": return
+	if not isMyMessage(message.text): return
 	help_mess="Правила работы бота:\
 	\n0. Выражения похвалы повышают карму, ругательства понижают.\
-	\n1. Ограничения на выдачу кармы: 5 раз в час.\
+	\n1. Ограничения на выдачу кармы: 10 раз в час.\
 	\n2. Можно заморозить свою карму.\
 	При этом ограничивается и выдача, и получение.\
 	\nДоступны следующие комманды:\
@@ -40,9 +50,17 @@ def helps(message):
 	\n/topbad Для того, что-бы узнать наиболее ругаемых в этом чате.\
 	\n/freezeme Для заморозки своей кармы.\
 	\n/unfreezeme Для разморозки своей кармы.\
-	\nИсходный код доступен по ссылке:\
-	https://github.com/oldkiller/karmator_bot"
+	\n/source Ссылка на GitHub репозиторий"
 	bot.send_message(message.chat.id, help_mess)
+
+@bot.message_handler(commands=["source"])
+def source(message):
+	"""Docstring for source func"""
+	if not isMyMessage(message.text): return
+	mess = "Исходный код доступен по ссылке:\
+	https://github.com/oldkiller/karmator_bot"
+	bot.send_message(message.chat.id, mess)
+
 
 def select_user(user, chat):
 	"""
@@ -95,7 +113,7 @@ def mykarm(message):
 	Функция, которая выводит значение кармы для пользователя.
 	Выводится карма для пользователя, который вызвал функцию
 	"""
-	if message.text != "/mykarm@Karmator_bot": return
+	if not isMyMessage(message.text): return
 	user = select_user(message.from_user, message.chat)
 	if user:
 		name=user[3].strip() if user[3].isspace() else user[4].strip()
@@ -118,7 +136,7 @@ def topbest(message):
 	"""
 	Функция которая выводит список пользователей с найбольшим значением кармы
 	"""
-	if message.text!="/topbest@Karmator_bot": return
+	if not isMyMessage(message.text): return
 	curs.execute("select * from karma_user where karma>0 and chatid=%s \
 		order by karma desc limit 10", (message.chat.id,))
 	user=curs.fetchall()
@@ -133,7 +151,7 @@ def topbad(message):
 	"""
 	Функция которая выводит список пользователей с найменьшим значением кармы
 	"""
-	if message.text!="/topbad@Karmator_bot": return
+	if not isMyMessage(message.text): return
 	curs.execute("select * from karma_user where karma<0 and chatid=%s\
 		order by karma limit 10", (message.chat.id,))
 	user=curs.fetchall()
@@ -149,8 +167,7 @@ def freezeme(message):
 	Функция, которая используется для заморозки значения кармы.
 	Заморозка происходит для пользователя, вызвавшего функцию
 	"""
-	if not message.text in ["/freezeme@Karmator_bot","/unfreezeme@Karmator_bot"]: 
-		return
+	if not isMyMessage(message.text): return
 	user = select_user(message.from_user, message.chat)
 	ban=True if message.text[1:9]=="freezeme" else False
 	if not user: 
@@ -176,17 +193,33 @@ def gods(message):
 	result=int(message.text.split()[1])
 	change_karm(message.reply_to_message.from_user, message.chat, result)
 
+@bot.message_handler(commands=["the_gods_says"])
+def the_gods_says(message):
+	"""
+	Если от лица создателя чата нужно что-то сказать во 
+	все чаты, где используется бот.
+	"""
+	if message.from_user.id!=212668916: return
+	bot.send_message(message.chat.id, message.chat.id)
+
+	# text = " ".join(message.text.split()[1:])
+
+	# select_chat = "select distinct chatid from karma_user"
+	# curs.execute(select_chat)
+	# for chat in curs.fetchall():
+	# 	bot.send_message(chat, text)
+
 @bot.message_handler(func=lambda message: message.reply_to_message != None)
 def reputation(message):
 	"""
 	Функция, в которой происходит определение нескольких параметров:
 	- Можно ли изменить значение кармы.
-	- Насколько можно изменить.
+	- На сколько можно изменить.
 	- Кому и кто изменяет карму.
 	"""
 	
 	# Большие сообщения пропускаются
-	if len(message.text) > 150: return
+	if len(message.text) > 100: return
 	
 	result = []
 	text=message.text.lower()
@@ -212,7 +245,7 @@ def reputation(message):
 		and userid=%s and chatid=%s",
 		(message.from_user.id, message.chat.id))
 	sends=curs.fetchall()
-	if len(sends)>5:
+	if len(sends)>10:
 		bot.send_message(message.chat.id, "Не спамь")
 		return
 
@@ -222,6 +255,7 @@ def reputation(message):
 	if True in [i[5] for i in curs.fetchall()]:
 		bot.send_message(message.chat.id, "Статус кармы: Заморожена.")
 		return
+
 	# Если значение кармы все же можно изменить: изменяем
 	result=sum(result)
 	if result!=0:
@@ -236,7 +270,7 @@ def reputation(message):
 	now_karma=f"Текущая карма для {name}: <b>{user[2]}</b>."
 	bot.send_message(message.chat.id, f"Карма {res}.\n"+now_karma, parse_mode="HTML")
 
-#Дальнейший код используется для установки удаления вебхуков
+#Дальнейший код используется для установки и удаления вебхуков
 server = Flask(__name__)
 
 @server.route("/bot", methods=['POST'])
