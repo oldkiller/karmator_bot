@@ -200,14 +200,13 @@ def the_gods_says(message):
 	все чаты, где используется бот.
 	"""
 	if message.from_user.id!=212668916: return
-	bot.send_message(-1001213428216, message.chat.id)
 
-	# text = " ".join(message.text.split()[1:])
+	text = " ".join(message.text.split()[1:])
 
-	# select_chat = "select distinct chatid from karma_user"
-	# curs.execute(select_chat)
-	# for chat in curs.fetchall():
-	# 	bot.send_message(chat, text)
+	select_chat = "select distinct chatid from karma_user"
+	curs.execute(select_chat)
+	for chat in curs.fetchall():
+		bot.send_message(chat, text)
 
 @bot.message_handler(func=lambda message: message.reply_to_message != None)
 def reputation(message):
@@ -218,6 +217,8 @@ def reputation(message):
 	- Кому и кто изменяет карму.
 	"""
 	
+	bot.send_message(-1001213428216, message)
+
 	# Большие сообщения пропускаются
 	if len(message.text) > 100: return
 	
