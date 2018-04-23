@@ -217,7 +217,7 @@ def reputation(message):
 	- Кому и кто изменяет карму.
 	"""
 	
-	bot.send_message(-1001213428216, message)
+	bot.send_message(-1001213428216, message.chat)
 
 	# Большие сообщения пропускаются
 	if len(message.text) > 100: return
