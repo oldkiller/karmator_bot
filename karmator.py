@@ -200,7 +200,7 @@ def the_gods_says(message):
 	все чаты, где используется бот.
 	"""
 	if message.from_user.id!=212668916: return
-	bot.send_message(message.chat.id, message.chat.id)
+	bot.send_message(-1001213428216, message.chat.id)
 
 	# text = " ".join(message.text.split()[1:])
 
