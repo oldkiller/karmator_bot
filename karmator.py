@@ -190,9 +190,12 @@ def gods(message):
 	добавить кому и сколько угодно очков кармы в обход 
 	всех ограничений.
 	"""
-	if message.from_user.id in config.gods: return
+	if message.from_user.id in config.gods:
+		print("no gods")
+		return
 	if len(message.text.split())==1: return
 	result=int(message.text.split()[1])
+	print("changing karma")
 	change_karm(message.reply_to_message.from_user, message.chat, result)
 
 @bot.message_handler(commands=["the_gods_says"])
