@@ -105,7 +105,7 @@ def limitation(user,chat):
 	user - пользователь, который изменял карму \n
 	chat - чат, в котором находится пользователь
 	"""
-	curs.execute("insert into limitation values(%s,%s,current_timestamp)",
+	curs.execute("insert into limitation values(%s,%s,current_timestamp+interval'3 hour')",
 		(user.id, chat.id))
 	data.commit()
 
@@ -242,7 +242,7 @@ def reputation(message):
 	
 	# Ограничение: 5 изменений кармы для пользователя в час
 	curs.execute("select * from limitation where \
-		timer>current_timestamp-interval'12 hour' \
+		timer>current_timestamp+interval'3 hour'-interval'12 hour' \
 		and userid=%s and chatid=%s",
 		(message.from_user.id, message.chat.id))
 	sends=curs.fetchall()
