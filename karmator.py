@@ -4,6 +4,8 @@ import hashlib
 import telebot
 import os
 
+import config
+
 telegram_api=os.environ["telegram_token"]
 db_address=os.environ["DATABASE_URL"]
 bot = telebot.TeleBot(telegram_api)
@@ -25,7 +27,7 @@ def isMyMessage(text):
 	text=text.split()[0]
 	text=text.split("@")
 	if len(text)>1:
-		if text[1]=="Karmator_bot":
+		if text[1]==config.bot_name:
 			return True
 		else: return False
 	return True
@@ -188,7 +190,7 @@ def gods(message):
 	добавить кому и сколько угодно очков кармы в обход 
 	всех ограничений.
 	"""
-	if message.from_user.id!=212668916: return
+	if message.from_user.id in config.admin: return
 	if len(message.text.split())==1: return
 	result=int(message.text.split()[1])
 	change_karm(message.reply_to_message.from_user, message.chat, result)
@@ -199,7 +201,7 @@ def the_gods_says(message):
 	Если от лица создателя чата нужно что-то сказать во 
 	все чаты, где используется бот.
 	"""
-	if message.from_user.id!=212668916: return
+	if not message.from_user.id in config.admin: return
 
 	text = " ".join(message.text.split()[1:])
 
@@ -216,8 +218,6 @@ def reputation(message):
 	- На сколько можно изменить.
 	- Кому и кто изменяет карму.
 	"""
-	
-	bot.send_message(-1001213428216, message.chat)
 
 	# Большие сообщения пропускаются
 	if len(message.text) > 100: return
@@ -242,12 +242,12 @@ def reputation(message):
 	
 	# Ограничение: 5 изменений кармы для пользователя в час
 	curs.execute("select * from limitation where \
-		timer>current_timestamp-interval'1 hour' \
+		timer>current_timestamp-interval'12 hour' \
 		and userid=%s and chatid=%s",
 		(message.from_user.id, message.chat.id))
 	sends=curs.fetchall()
-	if len(sends)>10:
-		bot.send_message(message.chat.id, "Не спамь")
+	if len(sends)>5:
+		bot.send_message(message.chat.id, "Не спамь. " + sends[-1][2])
 		return
 
 	# Если у кого то из учасников заморожена карма: прервать выполнение функции
@@ -271,11 +271,6 @@ def reputation(message):
 	now_karma=f"Текущая карма для {name}: <b>{user[2]}</b>."
 	bot.send_message(message.chat.id, f"Карма {res}.\n"+now_karma, parse_mode="HTML")
 
-@bot.message_handler(func=lambda message: message != None)
-def spy(message):
-	bot.send_message(-1001213428216, message.chat)
-
-
 #Дальнейший код используется для установки и удаления вебхуков
 server = Flask(__name__)
 
@@ -287,7 +282,7 @@ def getMessage():
 @server.route("/")
 def webhook_add():
 	bot.remove_webhook()
-	bot.set_webhook(url="https://karmatorbot.herokuapp.com/bot")
+	bot.set_webhook(url=config.url)
 	return "!", 200
 
 @server.route("/<password>")
