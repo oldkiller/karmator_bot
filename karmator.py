@@ -247,7 +247,7 @@ def reputation(message):
 		(message.from_user.id, message.chat.id))
 	sends=curs.fetchall()
 	if len(sends)>5:
-		bot.send_message(message.chat.id, "Не спамь. " + sends[-1][2])
+		bot.send_message(message.chat.id, "Не спамь. " + str(sends[-1][2]))
 		return
 
 	# Если у кого то из учасников заморожена карма: прервать выполнение функции
