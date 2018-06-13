@@ -196,6 +196,17 @@ def gods(message):
 	result=int(message.text.split()[1])
 	change_karm(message.reply_to_message.from_user, message.chat, result)
 
+@bot.message_handler(commands=["unmute"])
+def unmute(message):
+	if not isMyMessage(message.text): 
+		return
+	if message.from_user.id not in config.gods:
+		return
+	curs.execute("delete from limitation where chatid=%s and userid=%s;", 
+		(message.reply_to_message.from_user.id, message.chat.id))
+	data.commit()
+	bot.send_message(message.chat.id, "Розблокировано")
+
 @bot.message_handler(commands=["the_gods_says"])
 def the_gods_says(message):
 	"""
@@ -247,7 +258,7 @@ def reputation(message):
 		and userid=%s and chatid=%s",
 		(message.from_user.id, message.chat.id))
 	sends=curs.fetchall()
-	if len(sends)>5:
+	if len(sends)>7:
 		bot.send_message(message.chat.id, "Не спамь. " + str(sends[0][2]))
 		return
 
