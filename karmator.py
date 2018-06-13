@@ -190,7 +190,7 @@ def gods(message):
 	добавить кому и сколько угодно очков кармы в обход 
 	всех ограничений.
 	"""
-	if message.from_user.id in config.gods:
+	if message.from_user.id not in config.gods:
 		print("no gods")
 		return
 	if len(message.text.split())==1: return
