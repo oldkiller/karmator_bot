@@ -14,7 +14,7 @@ data.set_isolation_level(pg.extensions.ISOLATION_LEVEL_AUTOCOMMIT)
 curs=data.cursor()
 
 # Слова, на которые реагирует бот
-good_words=["спс", "спасибо", "сяп", "благодарю", "благодарность", "помог ", 
+good_words=["спс", "спасибо", "сяп", "благодарю", "ору", "орево", "благодарность", "помог ", 
 			"sps", "spasibo", "дякую", "бережи тебе боже", "благодарочка", 
 			"спаси тебя бог", "сенкс", "thank", "респект", "храни тебя бог"]
 bad_word=["говно", "пидор", "давалка", "пенис", 
@@ -191,11 +191,9 @@ def gods(message):
 	всех ограничений.
 	"""
 	if message.from_user.id not in config.gods:
-		print("no gods")
 		return
 	if len(message.text.split())==1: return
 	result=int(message.text.split()[1])
-	print("changing karma")
 	change_karm(message.reply_to_message.from_user, message.chat, result)
 
 @bot.message_handler(commands=["the_gods_says"])
