@@ -51,7 +51,7 @@ def helps(message):
 		return
 	help_mess="Правила работы бота:\
 	\n0. Выражения похвалы повышают карму, ругательства понижают.\
-	\n1. Ограничения на выдачу кармы: 10 раз в час.\
+	\n1. Ограничения на выдачу кармы: 7 раз в 12 часов.\
 	\n2. Можно заморозить свою карму.\
 	При этом ограничивается и выдача, и получение.\
 	\nДоступны следующие комманды:\
@@ -72,7 +72,7 @@ def source(message):
 	if not isMyMessage(message.text): 
 		return
 	bot.send_message(message.chat.id, 
-		"Исходный код доступен по ссылке:" + config.source_link)
+		"Исходный код доступен по ссылке: " + config.source_link)
 
 
 def select_user(user, chat):
@@ -232,7 +232,8 @@ def the_gods_says(message):
 	Если от лица создателя чата нужно что-то сказать во 
 	все чаты, где используется бот.
 	"""
-	if not message.from_user.id in config.admin: return
+	if message.from_user.id not in config.gods: 
+		return
 
 	text = " ".join(message.text.split()[1:])
 
