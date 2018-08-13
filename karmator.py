@@ -1,3 +1,4 @@
+#!usr/bin/python3
 from flask import Flask, request
 import psycopg2 as pg
 import hashlib
@@ -6,6 +7,7 @@ import os
 
 import config
 
+
 telegram_api=os.environ["telegram_token"]
 db_address=os.environ["DATABASE_URL"]
 bot = telebot.TeleBot(telegram_api)
@@ -13,34 +15,40 @@ data = pg.connect(db_address)
 data.set_isolation_level(pg.extensions.ISOLATION_LEVEL_AUTOCOMMIT)
 curs=data.cursor()
 
+
 # Слова, на которые реагирует бот
-good_words=["спс", "спасибо", "сяп", "благодарю", "ору", "орево", "благодарность", "помог ", 
-			"sps", "spasibo", "дякую", "бережи тебе боже", "благодарочка", 
-			"спаси тебя бог", "сенкс", "thank", "респект", "храни тебя бог"]
-bad_word=["говно", "пидор", "давалка", "пенис", 
-			"добровская", "жопа", "дебил", "идиот", 
-			"suka", "сука", "мразь", "бакун", "юрченко", "мирон"]
+popular_good_words = ["спс", "ору", "орево"]
+good_words = ["спасибо", "сяп", "благодарю",  "благодарность", 
+			"помог ", "sps", "дякую", "бережи тебе боже", 
+			"благодарочка", "спаси тебя бог", "сенкс", "thank", 
+			"респект", "храни тебя бог"] + popular_good_words
+bad_words = ["говно", "пидор", "пенис", "жопа", "дебил", 
+			"suka", "сука", "мразь", "бакун", "юрченко"]
+
 
 def isMyMessage(text):
 	# В групповых чатах нужно быть уверенным, 
 	# что сообщение относится именно к этому боту
-	text=text.split()[0]
-	text=text.split("@")
-	if len(text)>1:
-		if text[1]==config.bot_name:
-			return True
-		else: return False
+	text = text.split()[0]
+	text = text.split("@")
+	if len(text) > 1:
+		if text[1] != config.bot_name:
+			return False
 	return True
+
 
 @bot.message_handler(commands=["start"])
 def start(message):
-	if not isMyMessage(message.text): return
+	if not isMyMessage(message.text): 
+		return
 	bot.send_message(message.chat.id, "Здравствуйте, я бот,\
 	 который отвечает за подсчет кармы в групповых чатах.")
 
+
 @bot.message_handler(commands=["help"])
 def helps(message):
-	if not isMyMessage(message.text): return
+	if not isMyMessage(message.text): 
+		return
 	help_mess="Правила работы бота:\
 	\n0. Выражения похвалы повышают карму, ругательства понижают.\
 	\n1. Ограничения на выдачу кармы: 10 раз в час.\
@@ -55,13 +63,16 @@ def helps(message):
 	\n/source Ссылка на GitHub репозиторий"
 	bot.send_message(message.chat.id, help_mess)
 
+
 @bot.message_handler(commands=["source"])
 def source(message):
-	"""Docstring for source func"""
-	if not isMyMessage(message.text): return
-	mess = "Исходный код доступен по ссылке:\
-	https://github.com/oldkiller/karmator_bot"
-	bot.send_message(message.chat.id, mess)
+	"""
+	Функция, которая по запросу возвращает ссылку на гитхаб-репозиторий
+	"""
+	if not isMyMessage(message.text): 
+		return
+	bot.send_message(message.chat.id, 
+		"Исходный код доступен по ссылке:" + config.source_link)
 
 
 def select_user(user, chat):
@@ -70,9 +81,10 @@ def select_user(user, chat):
 	user - пользователь, данные которого необходимы \n
 	chat - чат, в котором находится пользователь
 	"""
-	select_user_str="select * from karma_user where userid=%s and chatid=%s"
+	select_user_str = "select * from karma_user where userid=%s and chatid=%s"
 	curs.execute(select_user_str, (user.id, chat.id))
 	return curs.fetchone()
+
 
 def insert_user(user, chat):
 	"""
@@ -80,11 +92,12 @@ def insert_user(user, chat):
 	user - данные добавляемого пользователя \n
 	chat - чат, в котором находится пользователь
 	"""
-	first_name=user.first_name if user.first_name else ""
-	last_name=user.last_name if user.last_name else ""
-	username=user.username if user.username else ""
+	first_name = user.first_name if user.first_name else ""
+	last_name = user.last_name if user.last_name else ""
+	username = user.username if user.username else ""
 	curs.execute("insert into karma_user values(%s,%s,%s,%s,%s,%s)", 
 		(user.id, chat.id, 0, first_name+" "+last_name, username, False))
+
 
 def change_karm(user, chat, result):
 	"""
@@ -93,21 +106,25 @@ def change_karm(user, chat, result):
 	chat - чат, в котором находится пользователь \n
 	result - насколько нужно изменить карму
 	"""
-	news = select_user(user, chat)
-	if not news: insert_user(user, chat)
+	selected_user = select_user(user, chat)
+	if not selected_user:
+		insert_user(user, chat)
 	curs.execute("update karma_user set karma=karma+%s where \
 		userid=%s and chatid=%s", (result, user.id, chat.id))
 	data.commit()
 
-def limitation(user,chat):
+
+def limitation(user, chat):
 	"""
 	Функция, которая используется для ограничения видачи кармы
 	user - пользователь, который изменял карму \n
 	chat - чат, в котором находится пользователь
 	"""
-	curs.execute("insert into limitation values(%s,%s,current_timestamp+interval'3 hour')",
+	curs.execute("insert into limitation values\
+		(%s,%s,current_timestamp+interval'3 hour')",
 		(user.id, chat.id))
 	data.commit()
+
 
 @bot.message_handler(commands=["mykarm"])
 def mykarm(message):
@@ -115,38 +132,36 @@ def mykarm(message):
 	Функция, которая выводит значение кармы для пользователя.
 	Выводится карма для пользователя, который вызвал функцию
 	"""
-	if not isMyMessage(message.text): return
+	if not isMyMessage(message.text): 
+		return
+	
+	# user[2] - значение кармы, user[3] - имя и фамилия,
+	# user[4] - никнейм. 
 	user = select_user(message.from_user, message.chat)
 	if user:
-		name=user[3].strip() if user[3].isspace() else user[4].strip()
-		now_karma=f"Текущая карма для {name}: <b>{user[2]}</b>."
+		name = user[3].strip() if user[3].isspace() else user[4].strip()
+		now_karma = f"Текущая карма для {name}: <b>{user[2]}</b>."
 		bot.send_message(message.chat.id, now_karma, parse_mode="HTML")
 	else:
-		name=""
-		if message.from_user.first_name or message.from_user.last_name:
-			if message.from_user.first_name:
-				name+=message.from_user.first_name
-			if message.from_user.last_name:
-				name+=message.from_user.last_name 
-		elif message.from_user.username:
-			name=message.from_user.username
-		else: name="Анон-юзер"
-		bot.send_message(message.chat.id, f"Вас еще не благодарили, {name}.")
+		bot.reply_to(message, f"Вас еще не благодарили, {name}.")
+
 
 @bot.message_handler(commands=["topbest"])
 def topbest(message):
 	"""
 	Функция которая выводит список пользователей с найбольшим значением кармы
 	"""
-	if not isMyMessage(message.text): return
+	if not isMyMessage(message.text): 
+		return
 	curs.execute("select * from karma_user where karma>0 and chatid=%s \
 		order by karma desc limit 10", (message.chat.id,))
-	user=curs.fetchall()
-	top_mess="Топ благодаримых:\n"
+	user = curs.fetchall()
+	top_mess = "Топ благодаримых:\n"
 	for i in range(len(user)):
-		name=user[i][3].strip() if user[i][3].strip() else user[i][4].strip()
-		top_mess+=f"*{i+1}*. {name}, ({user[i][2]} раз)\n"
+		name = user[i][3].strip() if user[i][3].strip() else user[i][4].strip()
+		top_mess += f"*{i+1}*. {name}, ({user[i][2]} раз)\n"
 	bot.send_message(message.chat.id, top_mess, parse_mode="Markdown")
+
 
 @bot.message_handler(commands=["topbad"])
 def topbad(message):
@@ -156,12 +171,13 @@ def topbad(message):
 	if not isMyMessage(message.text): return
 	curs.execute("select * from karma_user where karma<0 and chatid=%s\
 		order by karma limit 10", (message.chat.id,))
-	user=curs.fetchall()
-	top_mess="Топ ругаемых:\n"
+	user = curs.fetchall()
+	top_mess = "Топ ругаемых:\n"
 	for i in range(len(user)):
-		name=user[i][3].strip() if user[i][3].strip() else user[i][4].strip()
-		top_mess+=f"*{i+1}*. {name}, ({user[i][2]} раз)\n"
+		name = user[i][3].strip() if user[i][3].strip() else user[i][4].strip()
+		top_mess += f"*{i+1}*. {name}, ({user[i][2]} раз)\n"
 	bot.send_message(message.chat.id, top_mess, parse_mode="Markdown")
+
 
 @bot.message_handler(commands=["freezeme","unfreezeme"])
 def freezeme(message):
@@ -171,7 +187,7 @@ def freezeme(message):
 	"""
 	if not isMyMessage(message.text): return
 	user = select_user(message.from_user, message.chat)
-	ban=True if message.text[1:9]=="freezeme" else False
+	ban = True if message.text[1:9] == "freezeme" else False
 	if not user: 
 		insert_user(message.from_user, message.chat)
 		user=select_user(message.from_user, message.chat)
@@ -183,6 +199,7 @@ def freezeme(message):
 	result+="заморожена" if ban else "разморожена"
 	bot.send_message(message.chat.id, result)
 
+
 @bot.message_handler(commands=["the_gods_are_always_right"])
 def gods(message):
 	"""
@@ -192,9 +209,10 @@ def gods(message):
 	"""
 	if message.from_user.id not in config.gods:
 		return
-	if len(message.text.split())==1: return
+	if len(message.text.split()) == 1: return
 	result=int(message.text.split()[1])
 	change_karm(message.reply_to_message.from_user, message.chat, result)
+
 
 @bot.message_handler(commands=["unmute"])
 def unmute(message):
@@ -206,6 +224,7 @@ def unmute(message):
 		(message.reply_to_message.from_user.id, message.chat.id))
 	data.commit()
 	bot.send_message(message.chat.id, "Розблокировано")
+
 
 @bot.message_handler(commands=["the_gods_says"])
 def the_gods_says(message):
@@ -222,43 +241,85 @@ def the_gods_says(message):
 	for chat in curs.fetchall():
 		bot.send_message(chat, text)
 
+
+def is_karma_changing(message):
+	result = []
+	text = message.lower()
+	
+	def search_rep_full(words):
+		for word in words:
+			if word == text:
+				return True
+
+	def search_rep_bits(words):
+		for word in words:
+			if word in text:
+				return True
+
+	if search_rep_full(good_words):
+		result.append(1)
+	if search_rep_full(bad_words):
+		result.append(-1)
+
+	if result: return result
+
+	if search_rep_bits([" " + word for word in good_words]):
+		result.append(1)
+	if search_rep_bits([" " + word for word in bad_words]):
+		result.append(-1)
+	if search_rep_full([" ".join(word) for word in popular_good_words]):
+		result.append(1)
+
+	return result
+	# for word in good_words:
+	# 	if word == text:
+	# 		result.append(1)
+	# 		break
+	# for word in bad_words:
+	# 	if word == text:
+	# 		result.append(-1)
+	# 		break
+
+	# if result: return result
+
+	# for word in good_words:
+	# 	if word in text:
+	# 		result.append(1)
+	# 		break
+	# for word in bad_words:
+	# 	if word in text:
+	# 		result.append(-1)
+	# 		break
+
+
 @bot.message_handler(func=lambda message: message.reply_to_message != None)
 def reputation(message):
 	"""
 	Функция, в которой происходит определение нескольких параметров:
 	- Можно ли изменить значение кармы.
-	- На сколько можно изменить.
 	- Кому и кто изменяет карму.
 	"""
 
 	# Большие сообщения пропускаются
 	if len(message.text) > 100: return
-	
-	result = []
-	text=message.text.lower()
-	for rep in good_words:
-		if rep in text:
-			result.append(1)
-			break
-	for rep in bad_word:
-		if rep in text:
-			result.append(-1)
-			break
+
+	result = is_karma_changing(message.text)
 	
 	# Если карму не пытаются изменить, то прервать выполнение функции
 	if not result: return
 	
-	if message.from_user.id==message.reply_to_message.from_user.id:
-		bot.send_message(message.chat.id,"Нельзя добавлять карму самому себе.")
+	# Защита от поднятия кармы самому себе
+	if message.from_user.id == message.reply_to_message.from_user.id:
+		bot.send_message(message.chat.id, "Нельзя изменять карму самому себе.")
 		return
 	
-	# Ограничение: 5 изменений кармы для пользователя в час
+	# Ограничение на изменение кармы для пользователя во временной промежуток 
 	curs.execute("select * from limitation where \
 		timer>current_timestamp+interval'3 hour'-interval'12 hour' \
 		and userid=%s and chatid=%s",
 		(message.from_user.id, message.chat.id))
-	sends=curs.fetchall()
-	if len(sends)>7:
+	sends = curs.fetchall()
+	if len(sends) > 7:
 		bot.send_message(message.chat.id, "Не спамь. " + str(sends[0][2]))
 		return
 
@@ -270,17 +331,17 @@ def reputation(message):
 		return
 
 	# Если значение кармы все же можно изменить: изменяем
-	result=sum(result)
-	if result!=0:
+	result = sum(result)
+	if result != 0:
 		limitation(message.from_user, message.chat)
 		change_karm(message.reply_to_message.from_user, message.chat, result)
 
-	if result>0:    res="повышена"
-	elif result<0:  res="понижена"
-	elif result==0: res="не изменена"
+	if result > 0:    res = "повышена"
+	elif result < 0:  res = "понижена"
+	elif result == 0: res = "не изменена"
 	user = select_user(message.reply_to_message.from_user, message.chat)
 	name = user[3].strip() if not user[3].isspace() else user[4].strip()
-	now_karma=f"Текущая карма для {name}: <b>{user[2]}</b>."
+	now_karma = f"Текущая карма для {name}: <b>{user[2]}</b>."
 	bot.send_message(message.chat.id, f"Карма {res}.\n"+now_karma, parse_mode="HTML")
 
 #Дальнейший код используется для установки и удаления вебхуков

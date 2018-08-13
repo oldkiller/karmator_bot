@@ -9,3 +9,6 @@ url = "https://karmatorbot.herokuapp.com/bot"
 
 # Имя бота (то, которое @Karmator_bot)
 bot_name = "Karmator_bot"
+
+# Ссылка на Github репозиторий этого бота
+source_link = "https://github.com/oldkiller/karmator_bot"
