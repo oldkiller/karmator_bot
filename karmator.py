@@ -18,16 +18,6 @@ data.set_isolation_level(pg.extensions.ISOLATION_LEVEL_AUTOCOMMIT)
 curs = data.cursor()
 
 
-# Слова, на которые реагирует бот
-# popular_good_words = ["спс", "ору", "орево"]
-# good_words = ["спасибо", "сяп", "благодарю",  "благодарность", 
-# 			"помог ", "sps", "дякую", "бережи тебе боже", 
-# 			"благодарочка", "спаси тебя бог", "сенкс", 
-# 			"респект", "храни тебя бог", "люблю"] + popular_good_words
-# bad_words = ["говно", "пидор", "жопа", "дебил", 
-# 			"suka", "сука", "мразь", "бакун", "юрченко"]
-
-
 def isMyMessage(text):
 	# В групповых чатах нужно быть уверенным, 
 	# что сообщение относится именно к этому боту
@@ -263,11 +253,11 @@ def is_karma_changing(text):
 	for white in string.whitespace[1:]:
 		text = text.replace(white, "")
 
-	for word in config.good_words + config.good_emoji:
+	for word in config.good_words:
 		if word in text:
 			result.append(1)
 			break
-	for word in config.bad_words + config.bad_emoji:
+	for word in config.bad_words:
 		if word in text:
 			result.append(-1)
 			break
