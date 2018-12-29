@@ -239,12 +239,10 @@ def is_karma_changing(text):
 	result = []
 	
 	if len(text) == 1:
-		for emoji in config.good_emoji:
-			if text == emoji:
-				result.append(1)
-		for emoji in config.bad_emoji:
-			if text == emoji:
-				result.append(-1)
+		if text in config.good_emoji:
+			result.append(1)
+		if text in config.bad_emoji:
+			result.append(-1)
 		return result
 
 	text = text.lower()
