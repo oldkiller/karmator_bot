@@ -1,29 +1,31 @@
 #!usr/bin/python3
+import hashlib
+import string
+import os
+
 from flask import Flask, request
 import psycopg2 as pg
-import hashlib
 import telebot
-import os
 
 import config
 
 
-telegram_api=os.environ["telegram_token"]
-db_address=os.environ["DATABASE_URL"]
-bot = telebot.TeleBot(telegram_api)
-data = pg.connect(db_address)
+TELEGRAM_API = os.environ["telegram_token"]
+DATABASE_ADDRESS = os.environ["DATABASE_URL"]
+bot = telebot.TeleBot(TELEGRAM_API)
+data = pg.connect(DATABASE_ADDRESS)
 data.set_isolation_level(pg.extensions.ISOLATION_LEVEL_AUTOCOMMIT)
-curs=data.cursor()
+curs = data.cursor()
 
 
 # Слова, на которые реагирует бот
-popular_good_words = ["спс", "ору", "орево"]
-good_words = ["спасибо", "сяп", "благодарю",  "благодарность", 
-			"помог ", "sps", "дякую", "бережи тебе боже", 
-			"благодарочка", "спаси тебя бог", "сенкс", "thank", 
-			"респект", "храни тебя бог"] + popular_good_words
-bad_words = ["говно", "пидор", "пенис", "жопа", "дебил", 
-			"suka", "сука", "мразь", "бакун", "юрченко"]
+# popular_good_words = ["спс", "ору", "орево"]
+# good_words = ["спасибо", "сяп", "благодарю",  "благодарность", 
+# 			"помог ", "sps", "дякую", "бережи тебе боже", 
+# 			"благодарочка", "спаси тебя бог", "сенкс", 
+# 			"респект", "храни тебя бог", "люблю"] + popular_good_words
+# bad_words = ["говно", "пидор", "жопа", "дебил", 
+# 			"suka", "сука", "мразь", "бакун", "юрченко"]
 
 
 def isMyMessage(text):
@@ -190,13 +192,13 @@ def freezeme(message):
 	ban = True if message.text[1:9] == "freezeme" else False
 	if not user: 
 		insert_user(message.from_user, message.chat)
-		user=select_user(message.from_user, message.chat)
-	if user[5]!=ban:
+		user = select_user(message.from_user, message.chat)
+	if user[5] != ban:
 		curs.execute("update karma_user set is_banned=not is_banned where \
 			userid=%s and chatid=%s", (message.from_user.id, message.chat.id))
-	result="Статус изменен. " if user[5]!=ban else ""
-	result+="Текущий статус: карма "
-	result+="заморожена" if ban else "разморожена"
+	result = "Статус изменен. " if user[5]!=ban else ""
+	result += "Текущий статус: карма "
+	result += "заморожена" if ban else "разморожена"
 	bot.send_message(message.chat.id, result)
 
 
@@ -243,58 +245,48 @@ def the_gods_says(message):
 		bot.send_message(chat, text)
 
 
-def is_karma_changing(message):
+def is_karma_changing(text):
 	result = []
-	text = message.lower()
 	
-	def search_rep_full(words):
-		for word in words:
-			if word == text:
-				return True
+	if len(text) == 1:
+		for emoji in config.good_emoji:
+			if text == emoji:
+				result.append(1)
+		for emoji in config.bad_emoji:
+			if text == emoji:
+				result.append(-1)
+		return result
 
-	def search_rep_bits(words):
-		for word in words:
-			if word in text:
-				return True
+	text = text.lower()
+	for punc in string.punctuation:
+		text = text.replace(punc, "")
+	for white in string.whitespace[1:]:
+		text = text.replace(white, "")
 
-	if search_rep_full(good_words):
-		result.append(1)
-	if search_rep_full(bad_words):
-		result.append(-1)
-
-	if result: return result
-
-	if search_rep_bits([" " + word for word in good_words]):
-		result.append(1)
-	if search_rep_bits([" " + word for word in bad_words]):
-		result.append(-1)
-	if search_rep_full([" ".join(word) for word in popular_good_words]):
-		result.append(1)
-
+	for word in config.good_words + config.good_emoji:
+		if word in text:
+			result.append(1)
+			break
+	for word in config.bad_words + config.bad_emoji:
+		if word in text:
+			result.append(-1)
+			break
 	return result
-	# for word in good_words:
-	# 	if word == text:
-	# 		result.append(1)
-	# 		break
-	# for word in bad_words:
-	# 	if word == text:
-	# 		result.append(-1)
-	# 		break
 
-	# if result: return result
+reply_exist = lambda msg: msg.reply_to_message
 
-	# for word in good_words:
-	# 	if word in text:
-	# 		result.append(1)
-	# 		break
-	# for word in bad_words:
-	# 	if word in text:
-	# 		result.append(-1)
-	# 		break
+@bot.message_handler(content_types=["text"], func=reply_exist)
+def changing_karma_text(msg):
+	reputation(msg, msg.text)
 
 
-@bot.message_handler(func=lambda message: message.reply_to_message != None)
-def reputation(message):
+@bot.message_handler(content_types=["sticker"], func=reply_exist)
+def changing_karma_sticker(msg):
+	reputation(msg, msg.sticker.emoji)
+
+
+# @bot.message_handler(func=lambda message: message.reply_to_message != None)
+def reputation(msg, text):
 	"""
 	Функция, в которой происходит определение нескольких параметров:
 	- Можно ли изменить значение кармы.
@@ -302,67 +294,74 @@ def reputation(message):
 	"""
 
 	# Большие сообщения пропускаются
-	if len(message.text) > 100: return
+	if len(text) > 100: return
 
-	result = is_karma_changing(message.text)
+	result = is_karma_changing(text)
 	
 	# Если карму не пытаются изменить, то прервать выполнение функции
 	if not result: return
 	
+	bot.send_chat_action(msg.chat.id, "typing")
 	# Защита от поднятия кармы самому себе
-	if message.from_user.id == message.reply_to_message.from_user.id:
-		bot.send_message(message.chat.id, "Нельзя изменять карму самому себе.")
+	if msg.from_user.id == msg.reply_to_message.from_user.id:
+		bot.send_message(msg.chat.id, "Нельзя изменять карму самому себе.")
 		return
-	
+
 	# Ограничение на изменение кармы для пользователя во временной промежуток 
 	curs.execute("select * from limitation where \
 		timer>current_timestamp+interval'3 hour'-interval'12 hour' \
 		and userid=%s and chatid=%s",
-		(message.from_user.id, message.chat.id))
+		(msg.from_user.id, msg.chat.id))
 	sends = curs.fetchall()
 	if len(sends) > 7:
-		bot.send_message(message.chat.id, "Не спамь. " + str(sends[0][2]))
+		bot.send_message(msg.chat.id, "Не спамь. " + str(sends[0][2]))
 		return
 
 	# Если у кого то из учасников заморожена карма: прервать выполнение функции
 	curs.execute("select * from karma_user where chatid=%s and (userid=%s or userid=%s)",
-		(message.chat.id, message.from_user.id, message.reply_to_message.from_user.id))
+		(msg.chat.id, msg.from_user.id, msg.reply_to_message.from_user.id))
 	if True in [i[5] for i in curs.fetchall()]:
-		bot.send_message(message.chat.id, "Статус кармы: Заморожена.")
+		bot.send_message(msg.chat.id, "Статус кармы: Заморожена.")
 		return
 
 	# Если значение кармы все же можно изменить: изменяем
 	result = sum(result)
 	if result != 0:
-		limitation(message.from_user, message.chat)
-		change_karm(message.reply_to_message.from_user, message.chat, result)
+		limitation(msg.from_user, msg.chat)
+		change_karm(msg.reply_to_message.from_user, msg.chat, result)
 
-	if result > 0:    res = "повышена"
-	elif result < 0:  res = "понижена"
-	elif result == 0: res = "не изменена"
-	user = select_user(message.reply_to_message.from_user, message.chat)
+	if result > 0:
+		res = "повышена"
+	elif result < 0:
+		res = "понижена"
+	elif result == 0: 
+		res = "не изменена"
+	user = select_user(msg.reply_to_message.from_user, msg.chat)
 	name = user[3].strip() if not user[3].isspace() else user[4].strip()
 	now_karma = f"Текущая карма для {name}: <b>{user[2]}</b>."
-	bot.send_message(message.chat.id, f"Карма {res}.\n"+now_karma, parse_mode="HTML")
+	bot.send_message(msg.chat.id, f"Карма {res}.\n" + now_karma, parse_mode="HTML")
 
 #Дальнейший код используется для установки и удаления вебхуков
 server = Flask(__name__)
 
 @server.route("/bot", methods=['POST'])
-def getMessage():
+def get_message():
+	""" TODO """
 	bot.process_new_updates([telebot.types.Update.de_json(request.stream.read().decode("utf-8"))])
 	return "!", 200
 
 @server.route("/")
 def webhook_add():
+	""" TODO """
 	bot.remove_webhook()
 	bot.set_webhook(url=config.url)
 	return "!", 200
 
 @server.route("/<password>")
-def webhook_del(password):
-	pasw=hashlib.md5(bytes(password, encoding="utf-8")).hexdigest()
-	if pasw=="5b4ae01462b2930e129e31636e2fdb68":
+def webhook_rem(password):
+	""" TODO """
+	pasw = hashlib.md5(bytes(password, encoding="utf-8")).hexdigest()
+	if pasw == "5b4ae01462b2930e129e31636e2fdb68":
 		bot.remove_webhook()
 		return "Webhook removed", 200
 	else:
