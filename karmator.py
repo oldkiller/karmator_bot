@@ -192,7 +192,7 @@ def freezeme(message):
 	bot.send_message(message.chat.id, result)
 
 
-@bot.message_handler(commands=["the_gods_are_always_right"])
+@bot.message_handler(commands=["gods"])
 def gods(message):
 	"""
 	Небольшая функция, которая позволяет создателю бота 
@@ -200,9 +200,12 @@ def gods(message):
 	всех ограничений.
 	"""
 	if message.from_user.id not in config.gods:
+		bot.reply_to(message, "You not owner")
+	
+	if len(message.text.split()) == 1: 
 		return
-	if len(message.text.split()) == 1: return
-	result=int(message.text.split()[1])
+	
+	result = int(message.text.split()[1])
 	change_karm(message.reply_to_message.from_user, message.chat, result)
 
 
