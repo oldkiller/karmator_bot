@@ -255,10 +255,10 @@ def is_karma_changing(text):
 		text = text.replace(white, "")
 
 	for word in config.good_words:
-		if word == text or (" "+word+" " in text):
+		if word == text or (" "+word+" " in text) or text.startswith(word) or text.endswith(word):
 			result.append(1)
 	for word in config.bad_words:
-		if word in text or (" "+word+" " in text):
+		if word in text or (" "+word+" " in text) or text.startswith(word) or text.endswith(word):
 			result.append(-1)
 	return result
 
