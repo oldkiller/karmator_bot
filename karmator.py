@@ -316,8 +316,8 @@ def reputation(msg, text):
 	# 	return
 	for i in curs.fetchall():
 		if i[5] == True:
-			name = i[3] if i[3].strip() else i[4]
-			bot.send_message(msg.chat.id, f"Юзер: {name}. Статус кармы: Заморожена.")
+			name = i[3].strip() if i[3].strip() else i[4].strip()
+			bot.send_message(msg.chat.id, f"Юзер: {name}.\nСтатус кармы: Заморожена.")
 			return
 
 	# Если значение кармы все же можно изменить: изменяем
