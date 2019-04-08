@@ -311,9 +311,14 @@ def reputation(msg, text):
 	# Если у кого то из учасников заморожена карма: прервать выполнение функции
 	curs.execute("select * from karma_user where chatid=%s and (userid=%s or userid=%s)",
 		(msg.chat.id, msg.from_user.id, msg.reply_to_message.from_user.id))
-	if True in [i[5] for i in curs.fetchall()]:
-		bot.send_message(msg.chat.id, "Статус кармы: Заморожена.")
-		return
+	# if True in [i[5] for i in curs.fetchall()]:
+	# 	bot.send_message(msg.chat.id, "Статус кармы: Заморожена.")
+	# 	return
+	for i in curs.fetchall():
+		if i[5] == True:
+			name = i[3] if i[3].strip() else i[4]
+			bot.send_message(msg.chat.id, f"Юзер: {name}. Статус кармы: Заморожена.")
+			return
 
 	# Если значение кармы все же можно изменить: изменяем
 	result = sum(result)
