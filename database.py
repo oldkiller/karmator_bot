@@ -9,7 +9,7 @@ from logger import db_log
 DB_ADDRESS = os.environ["DATABASE_URL"]
 db_log.info(f"Database address: {DB_ADDRESS}")
 
-DB_ADDRESS.replace("postgres://", "")
+DB_ADDRESS = DB_ADDRESS.replace("postgres://", "")
 
 splitters = [":", "@", ":", "/", " "]
 database_data = []
