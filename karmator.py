@@ -179,7 +179,7 @@ def top_bad(msg):
 			name = user.user_name.strip()
 		else:
 			name = user.user_nick.strip()
-		top_mess += f"*{i+1}*. {name}, ({user[i][2]} раз)\n"
+		top_mess += f"*{i+1}*. {name}, ({user.karma} раз)\n"
 	if not selected_user:
 		top_mess = "Никто еще не заслужил быть в этом списке."
 	bot.send_message(msg.chat.id, top_mess, parse_mode="Markdown")
@@ -327,6 +327,7 @@ def is_karma_abuse(msg):
 
 	if len(limitation_request) > 7:
 		timer = limitation_request[0].timer + datetime.timedelta(hours=15)
+		timer = timer.strftime("%H:%M:%S %d.%m.%Y")
 		reply_text = f"Возможность изменять карму будет доступна с: {timer}"
 		bot.send_message(msg.chat.id, reply_text)
 		return True
