@@ -6,25 +6,25 @@ import peewee as pw
 # строкой, так что приходится парсить вручную.
 DATABASE_ADDRESS = os.environ["DATABASE_URL"]
 
-DATABASE_ADDRESS.replace("postgres://", "")
+# DATABASE_ADDRESS.replace("postgres://", "")
+#
+# splitters = [":", "@", ":", "/", " "]
+# database_data = []
+# for split in splitters:
+# 	database_data.append(DATABASE_ADDRESS.split(split, maxsplit=1)[0])
+# 	DATABASE_ADDRESS.replace(database_data[-1] + split, "")
+#
+# user, password, host, port, database_name = database_data
+#
+#
+# db = pw.PostgresqlDatabase(database_name,
+# 	user=user,
+# 	host=host,
+# 	password=password,
+# 	port=port)
 
-splitters = [":", "@", ":", "/", " "]
-database_data = []
-for split in splitters:
-	database_data.append(DATABASE_ADDRESS.split(split, maxsplit=1)[0])
-	DATABASE_ADDRESS.replace(database_data[-1] + split, "")
 
-user, password, host, port, database_name = database_data
-
-
-db = pw.PostgresqlDatabase(database_name,
-	user=user,
-	host=host,
-	password=password,
-	port=port)
-
-
-# db = pw.PostgresqlDatabase(DATABASE_ADDRESS, autocommit=True)
+db = pw.PostgresqlDatabase(DATABASE_ADDRESS, autocommit=True)
 
 
 class BaseModel(pw.Model):
