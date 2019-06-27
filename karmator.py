@@ -1,6 +1,5 @@
 #!usr/bin/python3
 import datetime
-import logging
 import hashlib
 import string
 import os
@@ -10,13 +9,10 @@ import peewee as pw
 import telebot
 
 from database import KarmaUser, Limitation
+from logger import main_log
 import config
 
-logging.basicConfig(
-	format=("%(filename)s [Line:%(lineno)d]# " +
-			"%(levelname)-8s [%(asctime)s] %(message)s"),
-	level=logging.INFO)
-
+main_log.info("Program starting")
 TELEGRAM_API = os.environ["telegram_token"]
 bot = telebot.TeleBot(TELEGRAM_API)
 
