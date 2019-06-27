@@ -3,6 +3,13 @@ import os
 
 import peewee as pw
 
+
+logging.basicConfig(
+	format=("%(filename)s [Line:%(lineno)d]# " +
+			"%(levelname)-8s [%(asctime)s] %(message)s"),
+	level=logging.INFO)
+
+
 # Магия монтажа. Peewee не умеет (26.06.2019) принимать в себя адрес базы одной
 # строкой, так что приходится парсить вручную.
 DATABASE_ADDRESS = os.environ["DATABASE_URL"]
