@@ -6,16 +6,16 @@ from logger import db_log
 
 # Магия монтажа. Peewee не умеет (26.06.2019) принимать в себя адрес базы одной
 # строкой, так что приходится парсить вручную.
-DATABASE_ADDRESS = os.environ["DATABASE_URL"]
-db_log.info(f"Database address: {DATABASE_ADDRESS}")
+DB_ADDRESS = os.environ["DATABASE_URL"]
+db_log.info(f"Database address: {DB_ADDRESS}")
 
-DATABASE_ADDRESS.replace("postgres://", "")
+DB_ADDRESS.replace("postgres://", "")
 
 splitters = [":", "@", ":", "/", " "]
 database_data = []
 for split in splitters:
-	database_data.append(DATABASE_ADDRESS.split(split, maxsplit=1)[0])
-	DATABASE_ADDRESS.replace(database_data[-1] + split, "")
+	database_data.append(DB_ADDRESS.split(split, maxsplit=1)[0])
+	DB_ADDRESS = DB_ADDRESS.replace(database_data[-1] + split, "")
 
 db_log.info(f"Connecting param: {database_data}")
 user, password, host, port, database_name = database_data
