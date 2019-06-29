@@ -31,6 +31,12 @@ db = pw.PostgresqlDatabase(database_name,
 # db = pw.PostgresqlDatabase(DATABASE_ADDRESS, autocommit=True)
 
 
+# В запросах в програме использованы логические
+# операторы поскольку (из документации Peewee):
+# Peewee uses bitwise operators (& and |)
+# rather than logical operators (and and or)
+
+
 class BaseModel(pw.Model):
 
 	class Meta:

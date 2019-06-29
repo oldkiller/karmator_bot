@@ -21,6 +21,7 @@ def is_my_message(msg):
 	"""
 	Функция для проверки, какому боту отправлено сообщение.
 	Для того, чтобы не реагировать на команды для других ботов.
+	:param msg: Объект сообщения, для которого проводится проверка.
 	"""
 	text = msg.text.split()[0].split("@")
 	if len(text) > 1:
@@ -31,6 +32,12 @@ def is_my_message(msg):
 
 @bot.message_handler(commands=["start"], func=is_my_message)
 def start(msg):
+	"""
+	Функция для ответа на сообщение-команду для приветствия пользователя.
+	:param msg: Объект сообщения-команды
+	"""
+	main_log.info("Starting func 'start'")
+
 	reply_text = (
 			"Здравствуйте, я бот, который отвечает за " +
 			" подсчет кармы в групповых чатах.")
@@ -39,6 +46,14 @@ def start(msg):
 
 @bot.message_handler(commands=["help"], func=is_my_message)
 def helps(msg):
+	"""
+	Функция для отправки списка общедоступных команд для бота
+	:param msg: Объект сообщения-команды
+	"""
+	main_log.info("Starting func 'help'")
+
+	bot.send_chat_action(msg.chat.id, "typing")
+
 	help_mess = "Правила работы бота:\
 	\n0. Выражения похвалы повышают карму, ругательства понижают.\
 	\n1. Ограничения на выдачу кармы: 7 раз в 12 часов.\
@@ -59,18 +74,24 @@ def source(msg):
 	"""
 	Функция, которая по запросу возвращает ссылку на гитхаб-репозиторий,
 	в котором хранится исходный код бота
+	:param msg: Объект сообщения-команды
 	"""
+	main_log.info("Starting func 'source'")
+
 	reply_text = "Исходный код доступен по ссылке: " + config.source_link
 	bot.send_message(msg.chat.id, reply_text)
 
 
 def select_user(user, chat):
 	"""
-	Функция для извлечения данных о пользователе \n
-	user - пользователь, данные которого необходимы \n
-	chat - чат, в котором находится пользователь
-	TODO
+	Функция для извлечения данных о пользователе
+	:param user: пользователь, данные которого необходимы
+	:param chat: чат, в котором находится пользователь
+
+	TODO Хотелось бы избавиться от этой функции
 	"""
+	main_log.info(f"Select user with id:{user.id} and chat:{chat.id}")
+
 	selected_user = KarmaUser.select().where(
 		(KarmaUser.userid == user.id) &
 		(KarmaUser.chatid == chat.id)).get()
@@ -79,17 +100,29 @@ def select_user(user, chat):
 
 def insert_user(user, chat):
 	"""
-	Функция для добавления нового пользователя \n
-	user - данные добавляемого пользователя \n
-	chat - чат, в котором находится пользователь
-	TODO
+	Функция для добавления нового пользователя
+	:param user: данные добавляемого пользователя
+	:param chat: чат, в котором находится пользователь
+
+	TODO Хотелось бы избавиться от этой функции
 	"""
+	# 'user_name' состоит из имени и фамилии. Но разные пользователь по разному
+	# подходят к заполнению этих полей и могут не указать имя или фамилию.
+	# А если имя или фамилия отсутствуют, то обращение к ним
+	# возвращает 'None', а не пустую строку. С 'user_nick' та же ситуация.
+	user_name = (user.first_name or "") + " " + (user.last_name or "")
+	user_nick = user.username or ""
+
+	main_log.info(f"Inserting new user with name: {user_name} and "
+				f"id:{user.id}, and in chat:{chat.title or ''} and "
+				f"id:{chat.id}")
+
 	new_user = KarmaUser.create(
 				userid=user.id,
 				chatid=chat.id,
 				karma=0,
-				user_name=(user.first_name or "") + (user.last_name or ""),
-				user_nick=user.username or "",
+				user_name=user_name,
+				user_nick=user_nick,
 				is_freezed=False)
 	new_user.save()
 
@@ -97,9 +130,9 @@ def insert_user(user, chat):
 def change_karma(user, chat, result):
 	"""
 	Функция для изменения значения кармы пользователя
-	user - пользователь, которому нужно изменить карму \n
-	chat - чат, в котором находится пользователь \n
-	result - насколько нужно изменить карму
+	:param user: пользователь, которому нужно изменить карму
+	:param chat: чат, в котором находится пользователь
+	:param result: на сколько нужно изменить карму
 	"""
 	selected_user = KarmaUser.select().where(
 		(KarmaUser.chatid == chat.id) &
@@ -107,8 +140,18 @@ def change_karma(user, chat, result):
 
 	if not selected_user:
 		insert_user(user, chat)
-	user_name = (user.first_name or "") + (user.last_name or "")
+
+	# 'user_name' состоит из имени и фамилии. Но разные пользователь по разному
+	# подходят к заполнению этих полей и могут не указать имя или фамилию.
+	# А если имя или фамилия отсутствуют, то обращение к ним
+	# возвращает 'None', а не пустую строку. С 'user_nick' та же ситуация.
+	user_name = (user.first_name or "") + " " + (user.last_name or "")
 	user_nick = user.username or ""
+
+	main_log.info(f"Updating karma for user with name: {user_name} and " +
+				f"id:{user.id}, and in chat:{chat.title or ''} and " +
+				f"id:{chat.id}. Karma changed at result")
+
 	update_user = KarmaUser.update(
 							karma=(KarmaUser.karma + result),
 							user_name=user_name,
@@ -124,28 +167,34 @@ def my_karma(msg):
 	"""
 	Функция, которая выводит значение кармы для пользователя.
 	Выводится карма для пользователя, который вызвал функцию
+	:param msg: Объект сообщения-команды
 	"""
+	main_log.info("Start func 'my_karma'")
 	user = select_user(msg.from_user, msg.chat)
-	if user:
-		if user.user_name.isspace():
-			name = user.user_name.strip()
-		else:
-			name = user.user_nick.strip()
+	if not user:
+		insert_user(msg.from_user, msg.chat)
 
-		now_karma = f"Текущая карма для {name}: <b>{user.karma}</b>."
-		bot.send_message(msg.chat.id, now_karma, parse_mode="HTML")
+	user = select_user(msg.from_user, msg.chat)
 
+	if user.user_name.isspace():
+		name = user.user_name.strip()
 	else:
-		name = (msg.from_user.user_name or "") + (msg.from_user.user_nick or "")
-		reply_text = f"Вас еще не благодарили, {name}."
-		bot.reply_to(msg, reply_text)
+		name = user.user_nick.strip()
+
+	main_log.info(f"User {name} check his karma ({user.karma})")
+
+	now_karma = f"Текущая карма для {name}: <b>{user.karma}</b>."
+	bot.send_message(msg.chat.id, now_karma, parse_mode="HTML")
 
 
 @bot.message_handler(commands=["topbest"], func=is_my_message)
 def top_best(msg):
 	"""
 	Функция которая выводит список пользователей с найбольшим значением кармы
+	:param msg: Объект сообщения-команды
 	"""
+	main_log.info("Starting func 'top_best'")
+
 	selected_user = KarmaUser.select()\
 		.where((KarmaUser.karma > 0) & (KarmaUser.chatid == msg.chat.id))\
 		.order_by(KarmaUser.karma.desc())\
@@ -167,6 +216,7 @@ def top_best(msg):
 def top_bad(msg):
 	"""
 	Функция которая выводит список пользователей с найменьшим значением кармы
+	:param msg: Объект сообщения-команды
 	"""
 	selected_user = KarmaUser.select() \
 		.where((KarmaUser.karma < 0) & (KarmaUser.chatid == msg.chat.id)) \
@@ -192,6 +242,7 @@ def freeze_me(msg):
 	Заморозка происходит для пользователя, вызвавшего функцию.
 	Заморозка означает отключение возможности смены кармы для пользователя,
 	и запрет на смену кармы другим пользователям
+	:param msg: Объект сообщения-команды
 	"""
 	user = select_user(msg.from_user, msg.chat)
 	freeze = True if msg.text[1:9] == "freezeme" else False
@@ -215,6 +266,7 @@ def gods_intervention(msg):
 	Небольшая функция, которая позволяет создателю бота 
 	добавить кому и сколько угодно очков кармы в обход 
 	всех ограничений.
+	:param msg: Объект сообщения-команды
 	"""
 	if len(msg.text.split()) == 1:
 		return
@@ -228,6 +280,11 @@ def gods_intervention(msg):
 
 @bot.message_handler(commands=["unmute"], func=is_my_message)
 def un_mute(msg):
+	"""
+	Команда для создателя. Позволяет снять с 1-го пользователя ограничение
+	на изменение кармы
+	:param msg: Объект сообщения-команды
+	"""
 	if msg.from_user.id not in config.gods:
 		return
 	Limitation.delete().where(
@@ -242,7 +299,7 @@ def the_gods_says(message):
 	"""
 	Если от лица создателя чата нужно что-то сказать во 
 	все чаты, где используется бот.
-	TODO
+	TODO Или дописать, или удалить.
 	"""
 	if message.from_user.id not in config.gods:
 		return
@@ -291,9 +348,6 @@ def is_karma_freezed(msg):
 	"""
 
 	# Выборка пользователей, связаных с сообщением.
-	# Использованы логические операторы поскольку (из документации Peewee):
-	# Peewee uses bitwise operators (& and |)
-	# rather than logical operators (and and or)
 	banned_request = KarmaUser.select().where(
 		(KarmaUser.chatid == msg.chat.id) &
 		(
