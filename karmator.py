@@ -273,6 +273,7 @@ def gods_intervention(msg):
 
 	if msg.from_user.id not in config.gods:
 		bot.reply_to(msg, "Ты не имеешь власти.")
+		return
 
 	result = int(msg.text.split()[1])
 	change_karma(msg.reply_to_message.from_user, msg.chat, result)
